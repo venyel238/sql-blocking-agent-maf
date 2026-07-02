@@ -1,0 +1,63 @@
+name: sql-blocking-agent-maf
+version: "1.0"
+description: >
+  Autonomous SQL Server blocking detection and resolution agent.
+  Detects head blockers via DMVs, analyses with LLM, decides KILL/ALERT/SKIP
+  via hard governance gates + LLM reasoning, and generates RCA reports.
+  Orchestrated with Microsoft Agent Framework 1.0 (Semantic Kernel + AutoGen).
+
+entry_point: main.py
+
+framework:
+  name: Microsoft Agent Framework
+  version: "1.0"
+  llm_client: FoundryChatClient
+  auth: DefaultAzureCredential
+
+agents:
+  - name: detector
+    path: src/agents/detector/agent.py
+    type: deterministic
+    executor_id: detection
+  - name: analyzer
+    path: src/agents/analyzer/agent.py
+    type: llm
+    prompt: src/agents/analyzer/prompt.md
+    executor_id: analyzer
+  - name: determination
+    path: src/agents/determination/agent.py
+    type: llm
+    prompt: src/agents/determination/prompt.md
+    executor_id: determination
+  - name: action
+    path: src/agents/action/agent.py
+    type: deterministic
+    executor_id: action
+  - name: rca
+    path: src/agents/rca/agent.py
+    type: llm
+    prompt: src/agents/rca/prompt.md
+    executor_id: rca
+  - name: notifier
+    path: src/agents/notifier/agent.py
+    type: deterministic
+    executor_id: notification
+
+orchestrator:
+  workflow: src/orchestrator/workflow.py
+  state: src/orchestrator/state.py
+  router: src/orchestrator/router.py
+  config: src/orchestrator/config.py
+
+memory:
+  long_term: src/memory/long_term.py
+
+models:
+  schemas: src/models/schemas.py
+
+tools:
+  path: src/tools/
+
+config:
+  env_file: .env
+  db_config: AgentConfigDB.dbo.GlobalConfig
