@@ -1,0 +1,17 @@
+# Microsoft Agent Framework (combines Semantic Kernel + AutoGen)
+agent-framework-foundry>=1.0.0   # FoundryChatClient, ChatAgent, WorkflowBuilder
+
+# Azure authentication (used by FoundryChatClient)
+azure-identity>=1.19.0
+azure-core>=1.32.0
+
+# Data contracts & DB driver
+pydantic>=2.12.5
+pyodbc>=5.0.0           # ODBC Driver 17 for SQL Server (Windows Auth)
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=9.1.1
+pytest-asyncio>=0.24.0  # async test support (MAF executors are async)

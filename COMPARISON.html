@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework Comparison: LangGraph vs Microsoft Agent Framework</title>
+<style>
+  :root {
+    --lg-color: #4f46e5;
+    --lg-bg: #eef2ff;
+    --maf-color: #0078d4;
+    --maf-bg: #dbeafe;
+    --green: #16a34a;
+    --red: #dc2626;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+    --radius: 8px;
+    --code-bg: #1e1e2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #111; line-height: 1.6; }
+
+  header { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #fff; padding: 40px 48px; }
+  header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  header p { color: #94a3b8; font-size: 1rem; }
+  .badges { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+  .badge-lg { background: var(--lg-color); color: #fff; }
+  .badge-maf { background: var(--maf-color); color: #fff; }
+  .badge-neutral { background: #334155; color: #e2e8f0; }
+
+  nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 48px; display: flex; gap: 0; overflow-x: auto; }
+  nav a { display: block; padding: 14px 18px; font-size: 0.85rem; color: #374151; text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  nav a:hover { color: var(--maf-color); border-bottom-color: var(--maf-color); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 48px; }
+
+  /* Summary cards */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 48px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .card-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray); margin-bottom: 8px; }
+  .card-lg { border-top: 4px solid var(--lg-color); }
+  .card-maf { border-top: 4px solid var(--maf-color); }
+  .card-neutral { border-top: 4px solid #94a3b8; }
+  .card-value { font-size: 1.2rem; font-weight: 700; color: #111; }
+  .card-sub { font-size: 0.8rem; color: var(--gray); margin-top: 4px; }
+
+  /* Section */
+  section { margin-bottom: 56px; }
+  section h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  section h2 span { font-size: 0.9rem; font-weight: 500; color: var(--gray); margin-left: 8px; }
+  .section-intro { color: #374151; margin-bottom: 20px; font-size: 0.95rem; }
+
+  /* Side-by-side code */
+  .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .code-panel { border-radius: var(--radius); overflow: hidden; }
+  .code-header { padding: 10px 16px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: 0.04em; }
+  .code-header.lg { background: var(--lg-color); color: #fff; }
+  .code-header.maf { background: var(--maf-color); color: #fff; }
+  .code-header .file { opacity: 0.85; font-weight: 400; }
+  pre { background: var(--code-bg); color: #cdd6f4; padding: 16px; font-size: 0.82rem; overflow-x: auto; line-height: 1.7; white-space: pre; tab-size: 4; }
+  pre .kw  { color: #cba6f7; }
+  pre .fn  { color: #89dceb; }
+  pre .str { color: #a6e3a1; }
+  pre .cm  { color: #585b70; font-style: italic; }
+  pre .cls { color: #f9e2af; }
+  pre .num { color: #fab387; }
+  pre .arg { color: #89b4fa; }
+
+  /* Diff table */
+  .diff-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .diff-table th { padding: 12px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: #f1f5f9; color: #374151; text-align: left; }
+  .diff-table th.lg-head { background: var(--lg-bg); color: var(--lg-color); }
+  .diff-table th.maf-head { background: var(--maf-bg); color: var(--maf-color); }
+  .diff-table td { padding: 12px 16px; border-top: 1px solid var(--border); vertical-align: top; }
+  .diff-table tr:hover td { background: #fafafa; }
+  .diff-table td:first-child { font-weight: 600; color: #374151; width: 18%; }
+  .diff-table td.lg-cell { color: #3730a3; }
+  .diff-table td.maf-cell { color: #1d4ed8; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; margin-right: 4px; }
+  .tag-same { background: #dcfce7; color: #166534; }
+  .tag-new { background: #dbeafe; color: #1d4ed8; }
+  .tag-changed { background: #fef3c7; color: #92400e; }
+
+  /* Verdict */
+  .verdict-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .verdict-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .verdict-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+  .verdict-card.lg { border-left: 4px solid var(--lg-color); }
+  .verdict-card.maf { border-left: 4px solid var(--maf-color); }
+  .verdict-card ul { list-style: none; padding: 0; }
+  .verdict-card ul li { padding: 5px 0; padding-left: 20px; position: relative; font-size: 0.88rem; color: #374151; }
+  .verdict-card ul li:before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  /* Metric bars */
+  .metric-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 0.85rem; }
+  .metric-label { width: 220px; flex-shrink: 0; color: #374151; }
+  .metric-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 99px; height: 10px; position: relative; }
+  .metric-bar-lg { height: 10px; border-radius: 99px; background: var(--lg-color); }
+  .metric-bar-maf { height: 10px; border-radius: 99px; background: var(--maf-color); }
+  .metric-val { width: 60px; text-align: right; font-weight: 600; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; }
+  .flow-node { background: #fff; border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-size: 0.8rem; font-weight: 600; text-align: center; min-width: 90px; }
+  .flow-node.blue { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+  .flow-node.purple { border-color: #7c3aed; background: #f5f3ff; color: #5b21b6; }
+  .flow-node.green { border-color: #059669; background: #ecfdf5; color: #065f46; }
+  .flow-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--gray); font-size: 1.2rem; }
+  .flow-label { font-size: 0.68rem; color: var(--gray); text-align: center; margin-top: 4px; }
+
+  @media (max-width: 768px) {
+    header { padding: 24px 20px; }
+    main { padding: 24px 20px; }
+    nav { padding: 0 20px; }
+    .side-by-side { grid-template-columns: 1fr; }
+    .verdict-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Framework Comparison</h1>
+  <p>SQL Server Blocking Agent — LangGraph vs Microsoft Agent Framework 1.0</p>
+  <div class="badges">
+    <span class="badge badge-lg">LangGraph 1.2+</span>
+    <span class="badge badge-maf">MS Agent Framework 1.0 (Apr 2026)</span>
+    <span class="badge badge-neutral">Same business logic · Different orchestration</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#summary">Summary</a>
+  <a href="#orchestration">Orchestration</a>
+  <a href="#state">State</a>
+  <a href="#llm">LLM Client</a>
+  <a href="#nodes">Nodes / Executors</a>
+  <a href="#routing">Routing</a>
+  <a href="#config">Config</a>
+  <a href="#async">Async Bridge</a>
+  <a href="#code-volume">Code Volume</a>
+  <a href="#verdict">Verdict</a>
+</nav>
+
+<main>
+
+<!-- ── SUMMARY ─────────────────────────────────────────────────────────── -->
+<section id="summary">
+  <h2>At a Glance</h2>
+  <p class="section-intro">Both implementations run the identical 6-node pipeline: Detection → Analyzer → Determination → [Action] → RCA → Notification. All 13 tool files, all 3 prompt.md files, schemas, and memory layer are <strong>100% shared</strong>. Only the orchestration glue differs.</p>
+
+  <div class="summary-grid">
+    <div class="card card-lg">
+      <div class="card-label">Framework</div>
+      <div class="card-value">LangGraph</div>
+      <div class="card-sub">LangChain ecosystem · open-source</div>
+    </div>
+    <div class="card card-maf">
+      <div class="card-label">Framework</div>
+      <div class="card-value">MS Agent Framework</div>
+      <div class="card-sub">Semantic Kernel + AutoGen · Azure-native</div>
+    </div>
+    <div class="card card-lg">
+      <div class="card-label">LLM Client</div>
+      <div class="card-value">ChatOpenAI</div>
+      <div class="card-sub">Any OpenAI-compatible endpoint</div>
+    </div>
+    <div class="card card-maf">
+      <div class="card-label">LLM Client</div>
+      <div class="card-value">FoundryChatClient</div>
+      <div class="card-sub">Azure AI Foundry · DefaultAzureCredential</div>
+    </div>
+    <div class="card card-lg">
+      <div class="card-label">Graph Object</div>
+      <div class="card-value">StateGraph</div>
+      <div class="card-sub">Compiled to AGENT_GRAPH</div>
+    </div>
+    <div class="card card-maf">
+      <div class="card-label">Workflow Object</div>
+      <div class="card-value">WorkflowBuilder</div>
+      <div class="card-sub">Built to AGENT_WORKFLOW</div>
+    </div>
+    <div class="card card-neutral">
+      <div class="card-label">Shared (unchanged)</div>
+      <div class="card-value">13 Tool Files</div>
+      <div class="card-sub">+ 3 prompts + schemas + memory</div>
+    </div>
+    <div class="card card-neutral">
+      <div class="card-label">Orchestration delta</div>
+      <div class="card-value">−6% lines</div>
+      <div class="card-sub">MAF is slightly more concise</div>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th class="lg-head">LangGraph</th>
+        <th class="maf-head">MS Agent Framework</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Released</td><td class="lg-cell">2023</td><td class="maf-cell">April 2026</td></tr>
+      <tr><td>Foundation</td><td class="lg-cell">LangChain + LangGraph</td><td class="maf-cell">Semantic Kernel + AutoGen (unified)</td></tr>
+      <tr><td>Graph model</td><td class="lg-cell">Pregel / BSP superstep</td><td class="maf-cell">Superstep BSP (same model)</td></tr>
+      <tr><td>LLM calls</td><td class="lg-cell">Synchronous <code>LLM.invoke()</code></td><td class="maf-cell">Async <code>await agent.run()</code></td></tr>
+      <tr><td>Node signature</td><td class="lg-cell"><code>def node(state: dict, config: RunnableConfig) → dict</code></td><td class="maf-cell"><code>@executor async def node(state, ctx) → None</code></td></tr>
+      <tr><td>State merging</td><td class="lg-cell">Return partial dict, LangGraph merges</td><td class="maf-cell">Mutate + forward full state object</td></tr>
+      <tr><td>Routing</td><td class="lg-cell"><code>add_conditional_edges(fn → str)</code></td><td class="maf-cell"><code>FanOutEdgeGroup(selection_func → list[str])</code></td></tr>
+      <tr><td>Config injection</td><td class="lg-cell"><code>RunnableConfig["configurable"]</code></td><td class="maf-cell">Module singleton <code>get_config()</code></td></tr>
+      <tr><td>Terminal node</td><td class="lg-cell"><code>add_edge("notification", END)</code></td><td class="maf-cell"><code>await context.yield_output(state)</code></td></tr>
+      <tr><td>Auth model</td><td class="lg-cell">API key string</td><td class="maf-cell">DefaultAzureCredential / API key</td></tr>
+      <tr><td>Multi-provider</td><td class="lg-cell">Any OpenAI-compatible URL</td><td class="maf-cell">Azure AI Foundry (native)</td></tr>
+      <tr><td>Test helper</td><td class="lg-cell">Sync mock, no extra deps</td><td class="maf-cell">pytest-asyncio required</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── ORCHESTRATION ───────────────────────────────────────────────────── -->
+<section id="orchestration">
+  <h2>Orchestration <span>workflow.py</span></h2>
+  <p class="section-intro">Both use the same DAG topology: conditional branch after detection, conditional branch after determination, linear path through the rest. The API to express it differs.</p>
+
+  <!-- Pipeline diagram -->
+  <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
+    <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:12px;">Shared Pipeline (both implementations)</div>
+    <div class="flow">
+      <div><div class="flow-node blue">Detection</div><div class="flow-label">tool node</div></div>
+      <div class="flow-arrow">→</div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="flow-arrow" style="color:#22c55e">✓ blocking</div>
+          <div><div class="flow-node purple">Analyzer</div></div>
+          <div class="flow-arrow">→</div>
+          <div><div class="flow-node purple">Determination</div></div>
+          <div class="flow-arrow">→</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center"><div class="flow-arrow" style="color:#ef4444">KILL</div><div><div class="flow-node blue">Action</div></div><div class="flow-arrow">→</div></div>
+            <div style="display:flex;align-items:center"><div class="flow-arrow" style="color:#f59e0b" >SKIP</div><div style="width:90px"></div><div class="flow-arrow">→</div></div>
+          </div>
+          <div><div class="flow-node purple">RCA</div></div>
+          <div class="flow-arrow">→</div>
+        </div>
+        <div style="font-size:0.72rem;color:#ef4444;align-self:flex-start">✗ no blocking ──────────────────────────────────────────────────────────→</div>
+      </div>
+      <div><div class="flow-node green">Notification</div></div>
+    </div>
+  </div>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH <span class="file">src/orchestrator/workflow.py</span></div>
+      <pre><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, END
+
+<span class="kw">def</span> <span class="fn">build_graph</span>():
+    g = <span class="cls">StateGraph</span>(BlockingAgentState)
+
+    g.<span class="fn">add_node</span>(<span class="str">"detection"</span>,    detection_node)
+    g.<span class="fn">add_node</span>(<span class="str">"analyzer"</span>,     analyzer_node)
+    g.<span class="fn">add_node</span>(<span class="str">"determination"</span>,determination_node)
+    g.<span class="fn">add_node</span>(<span class="str">"action"</span>,       action_node)
+    g.<span class="fn">add_node</span>(<span class="str">"rca"</span>,          rca_node)
+    g.<span class="fn">add_node</span>(<span class="str">"notification"</span>, notification_node)
+
+    g.<span class="fn">set_entry_point</span>(<span class="str">"detection"</span>)
+
+    g.<span class="fn">add_conditional_edges</span>(
+        <span class="str">"detection"</span>, route_after_detection,
+        {<span class="str">"analyzer"</span>: <span class="str">"analyzer"</span>,
+         <span class="str">"notification"</span>: <span class="str">"notification"</span>}
+    )
+    g.<span class="fn">add_edge</span>(<span class="str">"analyzer"</span>, <span class="str">"determination"</span>)
+    g.<span class="fn">add_conditional_edges</span>(
+        <span class="str">"determination"</span>, route_after_determination,
+        {<span class="str">"action"</span>: <span class="str">"action"</span>, <span class="str">"rca"</span>: <span class="str">"rca"</span>}
+    )
+    g.<span class="fn">add_edge</span>(<span class="str">"action"</span>, <span class="str">"rca"</span>)
+    g.<span class="fn">add_edge</span>(<span class="str">"rca"</span>, <span class="str">"notification"</span>)
+    g.<span class="fn">add_edge</span>(<span class="str">"notification"</span>, END)
+
+    <span class="kw">return</span> g.<span class="fn">compile</span>()
+
+AGENT_GRAPH = <span class="fn">build_graph</span>()</pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK <span class="file">src/orchestrator/workflow.py</span></div>
+      <pre><span class="kw">from</span> agent_framework <span class="kw">import</span> (
+    WorkflowBuilder, FanOutEdgeGroup
+)
+
+<span class="kw">def</span> <span class="fn">build_workflow</span>():
+    builder = <span class="cls">WorkflowBuilder</span>(
+        start_executor=detection_node
+    )
+
+    builder.<span class="fn">add_edge_group</span>(<span class="cls">FanOutEdgeGroup</span>(
+        source_id=<span class="str">"detection"</span>,
+        target_ids=[<span class="str">"analyzer"</span>, <span class="str">"notification"</span>],
+        selection_func=route_after_detection,
+    ))
+    builder.<span class="fn">add_edge</span>(analyzer_node, determination_node)
+
+    builder.<span class="fn">add_edge_group</span>(<span class="cls">FanOutEdgeGroup</span>(
+        source_id=<span class="str">"determination"</span>,
+        target_ids=[<span class="str">"action"</span>, <span class="str">"rca"</span>],
+        selection_func=route_after_determination,
+    ))
+    builder.<span class="fn">add_edge</span>(action_node, rca_node)
+    builder.<span class="fn">add_edge</span>(rca_node, notification_node)
+
+    <span class="kw">return</span> builder.<span class="fn">build</span>()
+
+AGENT_WORKFLOW = <span class="fn">build_workflow</span>()</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATE ──────────────────────────────────────────────────────────── -->
+<section id="state">
+  <h2>State Management <span>orchestrator/state.py</span></h2>
+  <p class="section-intro">Both use a Pydantic model with identical fields. The key difference is HOW that state flows between nodes.</p>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH — partial dict merging</div>
+      <pre><span class="cm"># Nodes return ONLY changed fields</span>
+<span class="kw">def</span> <span class="fn">detection_node</span>(
+    state: dict,
+    config: <span class="cls">RunnableConfig</span>
+) -> dict:
+
+    result = <span class="fn">detect_blocking</span>(...)
+
+    <span class="cm"># LangGraph merges this into the full state</span>
+    <span class="cm"># -- untouched fields are preserved automatically</span>
+    <span class="kw">return</span> {
+        <span class="str">"has_blocking"</span>: result.has_blocking,
+        <span class="str">"blocking_rows"</span>: result.blocking_rows,
+        <span class="str">"head_blocker"</span>:  result.head_blocker.model_dump(),
+        <span class="str">"errors"</span>:        errors,
+    }
+
+<span class="cm"># main.py invocation</span>
+final = <span class="kw">await</span> AGENT_GRAPH.<span class="fn">ainvoke</span>(
+    initial_state_dict,
+    config=graph_config        <span class="cm"># {configurable: config}</span>
+)
+decision = final.get(<span class="str">"decision"</span>, <span class="str">"SKIP"</span>)</pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK — mutate &amp; forward</div>
+      <pre><span class="cm"># Nodes mutate state in-place, forward full object</span>
+<span class="arg">@executor</span>(id=<span class="str">"detection"</span>)
+<span class="kw">async def</span> <span class="fn">detection_node</span>(
+    state: <span class="cls">BlockingState</span>,
+    context: <span class="cls">WorkflowContext</span>
+) -> <span class="kw">None</span>:
+
+    result = <span class="fn">detect_blocking</span>(...)
+
+    <span class="cm"># Mutate the state object directly</span>
+    state.has_blocking = result.has_blocking
+    state.blocking_rows = result.blocking_rows
+    state.head_blocker  = result.head_blocker.model_dump()
+    state.errors        = errors
+
+    <span class="cm"># Forward full state to next executor</span>
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)
+
+<span class="cm"># main.py invocation</span>
+final = <span class="kw">await</span> AGENT_WORKFLOW.<span class="fn">run</span>(initial_state)
+decision = final.get(<span class="str">"decision"</span>, <span class="str">"SKIP"</span>)</pre>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <thead><tr><th>Aspect</th><th class="lg-head">LangGraph</th><th class="maf-head">MS Agent Framework</th></tr></thead>
+    <tbody>
+      <tr><td>Node return</td><td class="lg-cell">Partial dict — only changed fields</td><td class="maf-cell">None — state mutated in-place</td></tr>
+      <tr><td>Unchanged fields</td><td class="lg-cell">Preserved automatically by framework</td><td class="maf-cell">Preserved because same object is forwarded</td></tr>
+      <tr><td>State type used in main.py</td><td class="lg-cell">dict-like (TypedDict / merged dict)</td><td class="maf-cell">BlockingState Pydantic model</td></tr>
+      <tr><td>Compatibility</td><td class="lg-cell"><code>state.get("key", default)</code></td><td class="maf-cell"><code>state.key</code> or <code>state.get("key")</code> (compat method)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── LLM CLIENT ─────────────────────────────────────────────────────── -->
+<section id="llm">
+  <h2>LLM Client <span>agents/base_agent.py</span></h2>
+  <p class="section-intro">The most impactful change. LangGraph uses ChatOpenAI (any provider, sync). MAF uses FoundryChatClient (Azure Foundry, async). This forces all agent methods to become async.</p>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH — ChatOpenAI (synchronous)</div>
+      <pre><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> langchain_core.messages <span class="kw">import</span> (
+    HumanMessage, SystemMessage
+)
+
+<span class="kw">def</span> <span class="fn">_make_llm</span>() -> <span class="cls">ChatOpenAI</span>:
+    <span class="kw">return</span> <span class="cls">ChatOpenAI</span>(
+        model=os.<span class="fn">getenv</span>(<span class="str">"LLM_MODEL"</span>, <span class="str">"gpt-4o"</span>),
+        api_key=os.<span class="fn">getenv</span>(<span class="str">"LLM_API_KEY"</span>),
+        base_url=os.<span class="fn">getenv</span>(<span class="str">"LLM_BASE_URL"</span>),
+        temperature=<span class="num">0</span>,
+        max_tokens=<span class="num">4096</span>,
+        timeout=<span class="fn">int</span>(os.<span class="fn">getenv</span>(<span class="str">"LLM_TIMEOUT_SECONDS"</span>,<span class="str">"30"</span>)),
+        max_retries=<span class="fn">int</span>(os.<span class="fn">getenv</span>(<span class="str">"LLM_MAX_RETRIES"</span>,<span class="str">"2"</span>)),
+    )
+
+<span class="kw">class</span> <span class="cls">BaseAgent</span>:
+    LLM = <span class="fn">_make_llm</span>()   <span class="cm"># class-level singleton</span>
+
+    <span class="kw">def</span> <span class="fn">ask_llm</span>(<span class="arg">self</span>, system_prompt, user_message) -> str:
+        response = <span class="arg">self</span>.LLM.<span class="fn">invoke</span>([
+            <span class="cls">SystemMessage</span>(content=system_prompt),
+            <span class="cls">HumanMessage</span>(content=user_message),
+        ])
+        <span class="kw">return</span> response.content  <span class="cm"># ← synchronous</span>
+
+    <span class="kw">def</span> <span class="fn">ask_llm_json</span>(<span class="arg">self</span>, system, user) -> dict:
+        raw = <span class="arg">self</span>.<span class="fn">ask_llm</span>(system, user + JSON_SUFFIX)
+        <span class="kw">return</span> json.<span class="fn">loads</span>(<span class="fn">strip_fences</span>(raw))</pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK — FoundryChatClient (async)</div>
+      <pre><span class="kw">from</span> agent_framework <span class="kw">import</span> ChatAgent
+<span class="kw">from</span> agent_framework.foundry <span class="kw">import</span> FoundryChatClient
+<span class="kw">from</span> azure.identity <span class="kw">import</span> DefaultAzureCredential
+
+<span class="kw">def</span> <span class="fn">_make_client</span>() -> <span class="cls">FoundryChatClient</span>:
+    <span class="kw">return</span> <span class="cls">FoundryChatClient</span>(
+        project_endpoint=os.<span class="fn">getenv</span>(
+            <span class="str">"FOUNDRY_PROJECT_ENDPOINT"</span>),
+        model=os.<span class="fn">getenv</span>(<span class="str">"LLM_MODEL"</span>, <span class="str">"gpt-4.1"</span>),
+        credential=<span class="cls">DefaultAzureCredential</span>(),
+    )
+
+<span class="kw">class</span> <span class="cls">BaseAgent</span>:
+    _CLIENT = <span class="kw">None</span>  <span class="cm"># lazy singleton</span>
+
+    <span class="kw">async def</span> <span class="fn">ask_llm</span>(<span class="arg">self</span>, system_prompt, user_message) -> str:
+        agent = <span class="cls">ChatAgent</span>(
+            chat_client=<span class="arg">self</span>.<span class="fn">get_client</span>(),
+            instructions=system_prompt, <span class="cm"># system in ctor</span>
+            temperature=<span class="num">0</span>, max_tokens=<span class="num">4096</span>,
+        )
+        result = <span class="kw">await</span> agent.<span class="fn">run</span>(user_message)
+        <span class="kw">return</span> result.content   <span class="cm"># ← async</span>
+
+    <span class="kw">async def</span> <span class="fn">ask_llm_json</span>(<span class="arg">self</span>, system, user) -> dict:
+        raw = <span class="kw">await</span> <span class="arg">self</span>.<span class="fn">ask_llm</span>(system, user + JSON_SUFFIX)
+        <span class="kw">return</span> json.<span class="fn">loads</span>(<span class="fn">strip_fences</span>(raw))</pre>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <thead><tr><th>Aspect</th><th class="lg-head">LangGraph</th><th class="maf-head">MS Agent Framework</th></tr></thead>
+    <tbody>
+      <tr><td>Package</td><td class="lg-cell">langchain-openai, langchain-core</td><td class="maf-cell">agent-framework-foundry, azure-identity</td></tr>
+      <tr><td>System prompt</td><td class="lg-cell">Passed as <code>SystemMessage</code> in list</td><td class="maf-cell">Set in <code>ChatAgent(instructions=...)</code></td></tr>
+      <tr><td>LLM call style</td><td class="lg-cell"><code>LLM.invoke(messages)</code> — synchronous</td><td class="maf-cell"><code>await agent.run(text)</code> — async coroutine</td></tr>
+      <tr><td>Singleton pattern</td><td class="lg-cell">Class-level <code>LLM = _make_llm()</code> on import</td><td class="maf-cell">Lazy <code>_CLIENT</code> via <code>get_client()</code></td></tr>
+      <tr><td>Auth</td><td class="lg-cell">API key env var</td><td class="maf-cell">DefaultAzureCredential (MSI / CLI)</td></tr>
+      <tr><td>Multi-provider</td><td class="lg-cell">RouteLLM, Abacus AI, Ollama, etc.</td><td class="maf-cell">Azure AI Foundry (native)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── NODES / EXECUTORS ───────────────────────────────────────────────── -->
+<section id="nodes">
+  <h2>Node / Executor Definition</h2>
+  <p class="section-intro">LangGraph nodes are plain Python functions. MAF executors use a decorator and must be async.</p>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH — plain function</div>
+      <pre><span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableConfig
+
+<span class="kw">def</span> <span class="fn">analyzer_node</span>(
+    state: dict,
+    config: <span class="cls">RunnableConfig</span>
+) -> dict:
+    cfg = config[<span class="str">"configurable"</span>]  <span class="cm"># injected by framework</span>
+    agent = <span class="cls">AnalyzerAgent</span>(cfg)
+    updates = agent.<span class="fn">run</span>(state)      <span class="cm"># synchronous</span>
+    <span class="kw">return</span> updates                   <span class="cm"># partial dict</span>
+
+
+<span class="cm"># Router function returns a string</span>
+<span class="kw">def</span> <span class="fn">route_after_detection</span>(state) -> str:
+    <span class="kw">return</span> <span class="str">"analyzer"</span> <span class="kw">if</span> state.get(<span class="str">"has_blocking"</span>) \
+           <span class="kw">else</span> <span class="str">"notification"</span></pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK — @executor decorator</div>
+      <pre><span class="kw">from</span> agent_framework <span class="kw">import</span> executor, WorkflowContext
+<span class="kw">from</span> orchestrator.config <span class="kw">import</span> get_config
+
+<span class="arg">@executor</span>(id=<span class="str">"analyzer"</span>)
+<span class="kw">async def</span> <span class="fn">analyzer_node</span>(
+    state: <span class="cls">BlockingState</span>,
+    context: <span class="cls">WorkflowContext</span>
+) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()         <span class="cm"># module singleton</span>
+    updates = <span class="kw">await</span> <span class="cls">AnalyzerAgent</span>(cfg).<span class="fn">run</span>(state)
+    state.llm_analysis  = updates[<span class="str">"llm_analysis"</span>]
+    state.severity_hint = updates[<span class="str">"severity_hint"</span>]
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)  <span class="cm"># forward</span>
+
+
+<span class="cm"># Router returns list[str] (supports true fan-out)</span>
+<span class="kw">def</span> <span class="fn">route_after_detection</span>(state) -> list[str]:
+    <span class="kw">return</span> [<span class="str">"analyzer"</span>] <span class="kw">if</span> state.has_blocking \
+           <span class="kw">else</span> [<span class="str">"notification"</span>]</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── ROUTING ─────────────────────────────────────────────────────────── -->
+<section id="routing">
+  <h2>Conditional Routing</h2>
+  <p class="section-intro">Same business logic (has_blocking / decision == "KILL"), different API surface.</p>
+
+  <table class="diff-table">
+    <thead><tr><th>Aspect</th><th class="lg-head">LangGraph</th><th class="maf-head">MS Agent Framework</th></tr></thead>
+    <tbody>
+      <tr><td>API</td><td class="lg-cell"><code>add_conditional_edges(node, fn, mapping)</code></td><td class="maf-cell"><code>FanOutEdgeGroup(source_id, target_ids, selection_func)</code></td></tr>
+      <tr><td>Router return type</td><td class="lg-cell"><code>str</code> — one target</td><td class="maf-cell"><code>list[str]</code> — supports multiple targets (true fan-out)</td></tr>
+      <tr><td>Mapping dict</td><td class="lg-cell">Required (maps router string → node name)</td><td class="maf-cell">Not needed — <code>target_ids</code> declares all possible targets</td></tr>
+      <tr><td>Also available</td><td class="lg-cell">—</td><td class="maf-cell"><code>SwitchCaseEdgeGroup</code> with <code>Case(predicate, target_id)</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── CONFIG ─────────────────────────────────────────────────────────── -->
+<section id="config">
+  <h2>Configuration Injection</h2>
+  <p class="section-intro">LangGraph injects config per-invocation via RunnableConfig. MAF has no equivalent — a module-level singleton fills the gap.</p>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH — per-invocation RunnableConfig</div>
+      <pre><span class="cm"># main.py — config passed at invocation time</span>
+graph_config = {<span class="str">"configurable"</span>: config}
+final = <span class="kw">await</span> AGENT_GRAPH.<span class="fn">ainvoke</span>(
+    initial_state,
+    config=graph_config
+)
+
+<span class="cm"># Every node receives it automatically</span>
+<span class="kw">def</span> <span class="fn">action_node</span>(state: dict, config: <span class="cls">RunnableConfig</span>):
+    cfg = config[<span class="str">"configurable"</span>]
+    dry_run = cfg.<span class="fn">get</span>(<span class="str">"dry_run"</span>, <span class="kw">True</span>)
+    ...</pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK — module singleton</div>
+      <pre><span class="cm"># config.py — singleton populated at startup</span>
+_ACTIVE_CONFIG: dict = {}
+
+<span class="kw">def</span> <span class="fn">load_config</span>() -> dict:
+    <span class="kw">global</span> _ACTIVE_CONFIG
+    _ACTIVE_CONFIG = config   <span class="cm"># set once at boot</span>
+    <span class="kw">return</span> config
+
+<span class="kw">def</span> <span class="fn">get_config</span>() -> dict:
+    <span class="kw">return</span> _ACTIVE_CONFIG
+
+<span class="cm"># Every node imports and reads it</span>
+<span class="arg">@executor</span>(id=<span class="str">"action"</span>)
+<span class="kw">async def</span> <span class="fn">action_node</span>(state, context):
+    cfg = <span class="fn">get_config</span>()        <span class="cm"># one line, no injection</span>
+    dry_run = cfg.<span class="fn">get</span>(<span class="str">"dry_run"</span>, <span class="kw">True</span>)
+    ...</pre>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <thead><tr><th>Trade-off</th><th class="lg-head">LangGraph (RunnableConfig)</th><th class="maf-head">MAF (get_config singleton)</th></tr></thead>
+    <tbody>
+      <tr><td>Multi-tenant</td><td class="lg-cell">Easy — pass different config per invocation</td><td class="maf-cell">Harder — singleton is process-wide</td></tr>
+      <tr><td>Simplicity</td><td class="lg-cell">Extra parameter on every node signature</td><td class="maf-cell">Single import, zero boilerplate</td></tr>
+      <tr><td>Runtime reload</td><td class="lg-cell">Possible per-cycle with new config dict</td><td class="maf-cell">Requires restart (singleton set at boot)</td></tr>
+      <tr><td>DB overrides</td><td class="lg-cell">GlobalConfig read at startup, in config dict</td><td class="maf-cell">Same — GlobalConfig read at startup</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── ASYNC BRIDGE ───────────────────────────────────────────────────── -->
+<section id="async">
+  <h2>Async/Sync Bridge <span>MAF-only addition</span></h2>
+  <p class="section-intro">The shared <code>tools/rca.py</code> calls <code>ask_llm_json</code> as a synchronous callable. In the MAF version that method is a coroutine — passing it directly would return a coroutine object, not a dict. A lightweight bridge solves this without changing the shared tool.</p>
+
+  <div class="side-by-side">
+    <div class="code-panel">
+      <div class="code-header lg">LANGGRAPH — tools/rca.py just works</div>
+      <pre><span class="cm"># tools/rca.py (shared, unchanged)</span>
+<span class="kw">def</span> <span class="fn">generate_rca</span>(
+    input: <span class="cls">RCAInput</span>,
+    ask_llm_json: <span class="cls">Callable</span>[[str, str], dict],
+) -> <span class="cls">RCAOutput</span>:
+    <span class="cm"># Called synchronously -- works fine with</span>
+    <span class="cm"># LangGraph's synchronous ask_llm_json()</span>
+    raw = <span class="fn">ask_llm_json</span>(_SYSTEM_PROMPT, user_msg)
+    ...
+
+<span class="cm"># rca/agent.py</span>
+result = <span class="fn">generate_rca</span>(
+    rca_input,
+    ask_llm_json=agent.<span class="fn">ask_llm_json</span>  <span class="cm"># sync ✓</span>
+)</pre>
+    </div>
+    <div class="code-panel">
+      <div class="code-header maf">MS AGENT FRAMEWORK — sync bridge needed</div>
+      <pre><span class="cm"># base_agent.py — sync wrapper for tool use</span>
+<span class="kw">def</span> <span class="fn">ask_llm_json_sync</span>(<span class="arg">self</span>, system, user) -> dict:
+    <span class="cm"># Run async coroutine in a fresh thread loop</span>
+    <span class="cm"># (avoids "nested event loop" error)</span>
+    <span class="kw">with</span> <span class="cls">ThreadPoolExecutor</span>(max_workers=<span class="num">1</span>) <span class="kw">as</span> pool:
+        future = pool.<span class="fn">submit</span>(
+            asyncio.<span class="fn">run</span>,
+            <span class="arg">self</span>.<span class="fn">ask_llm_json</span>(system, user),
+        )
+        <span class="kw">return</span> future.<span class="fn">result</span>()
+
+<span class="cm"># rca/agent.py — use sync bridge</span>
+result = <span class="fn">generate_rca</span>(
+    rca_input,
+    ask_llm_json=agent.<span class="fn">ask_llm_json_sync</span>  <span class="cm"># ✓</span>
+)</pre>
+    </div>
+  </div>
+  <p style="font-size:0.85rem;color:#374151;margin-top:12px;background:#fef3c7;border:1px solid #fde68a;border-radius:var(--radius);padding:12px 16px;">
+    <strong>Why ThreadPoolExecutor + asyncio.run?</strong> Calling <code>asyncio.get_event_loop().run_until_complete()</code> inside an already-running async context raises <em>"This event loop is already running."</em> Running in a dedicated thread gives it a fresh loop. No extra dependencies required (no nest_asyncio).
+  </p>
+</section>
+
+<!-- ── CODE VOLUME ────────────────────────────────────────────────────── -->
+<section id="code-volume">
+  <h2>Code Volume Comparison</h2>
+  <p class="section-intro">Orchestration layer only — shared tools/memory/models are identical in both.</p>
+
+  <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;">
+    <div class="metric-row">
+      <span class="metric-label">main.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">122</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:77%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">95</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">orchestrator/workflow.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">46</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:93%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">43</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">agents/base_agent.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">152</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:90%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">137</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">agents/detector/agent.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">373</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:95%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">355</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">agents/analyzer/agent.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">206</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:95%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">195</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">agents/determination/agent.py</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-lg" style="width:100%"></div></div>
+      <span class="metric-val" style="color:var(--lg-color)">256</span>
+      <div class="metric-bar-wrap"><div class="metric-bar-maf" style="width:97%"></div></div>
+      <span class="metric-val" style="color:var(--maf-color)">248</span>
+    </div>
+    <div style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;">
+      <span>Total orchestration lines</span>
+      <span>
+        <span style="color:var(--lg-color)">LangGraph: ~1,754</span>
+        &nbsp;&nbsp;
+        <span style="color:var(--maf-color)">MAF: ~1,643</span>
+        &nbsp;&nbsp;
+        <span style="color:var(--green)">−6% (MAF more concise)</span>
+      </span>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Changed?</th>
+        <th class="lg-head">LangGraph</th>
+        <th class="maf-head">MAF</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>src/tools/*.py (13 files)</td><td><span class="tag tag-same">IDENTICAL</span></td><td class="lg-cell">—</td><td class="maf-cell">—</td></tr>
+      <tr><td>src/memory/long_term.py</td><td><span class="tag tag-same">IDENTICAL</span></td><td class="lg-cell">—</td><td class="maf-cell">—</td></tr>
+      <tr><td>src/models/schemas.py</td><td><span class="tag tag-same">IDENTICAL</span></td><td class="lg-cell">—</td><td class="maf-cell">—</td></tr>
+      <tr><td>agents/*/prompt.md (3 files)</td><td><span class="tag tag-same">IDENTICAL</span></td><td class="lg-cell">—</td><td class="maf-cell">—</td></tr>
+      <tr><td>orchestrator/workflow.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">StateGraph + END</td><td class="maf-cell">WorkflowBuilder + FanOutEdgeGroup</td></tr>
+      <tr><td>orchestrator/state.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">BlockingAgentState</td><td class="maf-cell">BlockingState (same fields)</td></tr>
+      <tr><td>orchestrator/config.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">load_config() only</td><td class="maf-cell">+get_config() singleton</td></tr>
+      <tr><td>orchestrator/router.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">Returns str</td><td class="maf-cell">Returns list[str]</td></tr>
+      <tr><td>agents/base_agent.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">ChatOpenAI, sync</td><td class="maf-cell">FoundryChatClient, async + sync bridge</td></tr>
+      <tr><td>agents/*/agent.py (6 files)</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">def node(state, RunnableConfig)</td><td class="maf-cell">@executor async def node(state, WorkflowContext)</td></tr>
+      <tr><td>main.py</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">ainvoke(state, config=graph_config)</td><td class="maf-cell">AGENT_WORKFLOW.run(initial_state)</td></tr>
+      <tr><td>requirements.txt</td><td><span class="tag tag-changed">CHANGED</span></td><td class="lg-cell">langchain-openai, langgraph</td><td class="maf-cell">agent-framework-foundry, azure-identity</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── VERDICT ────────────────────────────────────────────────────────── -->
+<section id="verdict">
+  <h2>Verdict — When to Use Each</h2>
+  <p class="section-intro">Both implementations deliver identical blocking-detection behavior. The choice comes down to your organization's cloud and toolchain strategy.</p>
+
+  <div class="verdict-grid">
+    <div class="verdict-card lg">
+      <h3 style="color:var(--lg-color)">Choose LangGraph when…</h3>
+      <ul>
+        <li>You need multi-provider LLM flexibility (OpenAI, RouteLLM, Abacus AI, Ollama, Anthropic)</li>
+        <li>You are not an Azure shop or want no Azure dependency</li>
+        <li>You prefer open-source with a large community and extensive docs</li>
+        <li>You need complex graph features: cycles, human-in-the-loop, LangGraph Studio</li>
+        <li>Your team already uses the LangChain ecosystem</li>
+        <li>You want per-invocation config injection (multi-tenant scenarios)</li>
+        <li>You prefer synchronous code patterns</li>
+      </ul>
+    </div>
+    <div class="verdict-card maf">
+      <h3 style="color:var(--maf-color)">Choose MS Agent Framework when…</h3>
+      <ul>
+        <li>You are an Azure-first organization (Managed Identity, RBAC, Key Vault)</li>
+        <li>You use Azure AI Foundry for model governance and deployment</li>
+        <li>You want Semantic Kernel + AutoGen capabilities in one unified SDK</li>
+        <li>You need enterprise-grade observability via Azure Monitor / App Insights</li>
+        <li>You are building in a Microsoft 365 / Copilot Studio context</li>
+        <li>True parallel fan-out (multiple targets per superstep) is needed</li>
+        <li>You are a Microsoft shop — this project exactly fits that profile</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+    <div style="font-weight:700;margin-bottom:8px;">For this blocking agent specifically</div>
+    <p style="font-size:0.9rem;color:#374151;line-height:1.7;">
+      Since you are a <strong>Microsoft shop using Azure AI Foundry</strong>, the MAF version is the better long-term strategic choice. It integrates natively with your existing Azure authentication (no API key rotation), uses Azure Monitor for observability, and aligns with Microsoft's platform roadmap combining Semantic Kernel + AutoGen. The LangGraph version remains the pragmatic choice for local development, multi-provider testing, or if you need to switch models to non-Azure providers quickly.
+    </p>
+  </div>
+</section>
+
+</main>
+
+<footer style="text-align:center;padding:24px;color:var(--gray);font-size:0.82rem;border-top:1px solid var(--border);margin-top:20px;">
+  SQL Server Blocking Agent · Framework Comparison · Generated 2026
+  &nbsp;·&nbsp;
+  LangGraph: <code>c:\Python\sql-blocking-agent\</code>
+  &nbsp;·&nbsp;
+  MS Agent Framework: <code>c:\Python\ms-blocking-agent\</code>
+</footer>
+
+</body>
+</html>
