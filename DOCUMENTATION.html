@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Blocking Agent — Microsoft Agent Framework Documentation</title>
+<style>
+  :root {
+    --blue: #0ea5e9;
+    --blue-dark: #0284c7;
+    --blue-light: #e0f2fe;
+    --teal: #0d9488;
+    --teal-light: #ccfbf1;
+    --navy: #0f172a;
+    --navy2: #1e293b;
+    --slate: #475569;
+    --muted: #94a3b8;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --red: #dc2626;
+    --amber: #d97706;
+    --green: #059669;
+    --purple: #7c3aed;
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--navy); line-height: 1.7; }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 260px; min-width: 260px; background: var(--navy);
+             position: sticky; top: 0; height: 100vh; overflow-y: auto;
+             padding: 24px 0; flex-shrink: 0; }
+  .main { flex: 1; padding: 48px 56px; max-width: 960px; }
+
+  /* ── Sidebar ── */
+  .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .sidebar-logo h2 { color: var(--blue); font-size: 14px; font-weight: 700;
+                      letter-spacing: .5px; text-transform: uppercase; }
+  .sidebar-logo p { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .nav-section { padding: 16px 20px 4px; color: var(--muted);
+                  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+                  text-transform: uppercase; }
+  .nav a { display: block; padding: 7px 20px; color: #cbd5e1; font-size: 13px;
+            text-decoration: none; border-left: 3px solid transparent;
+            transition: all .15s; }
+  .nav a:hover, .nav a.active { color: var(--white); background: rgba(14,165,233,.15);
+                                  border-left-color: var(--blue); }
+
+  /* ── Hero ── */
+  .hero { background: linear-gradient(135deg, var(--navy) 0%, #0c1f3f 100%);
+          border-radius: 16px; padding: 48px; margin-bottom: 48px; color: var(--white); }
+  .hero h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 12px; }
+  .hero p { color: #94a3b8; font-size: 16px; max-width: 600px; margin-bottom: 24px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge-blue { background: rgba(14,165,233,.2); color: var(--blue); border: 1px solid rgba(14,165,233,.3); }
+  .badge-teal { background: rgba(13,148,136,.2); color: #2dd4bf; border: 1px solid rgba(13,148,136,.3); }
+  .badge-green { background: rgba(5,150,105,.2); color: #34d399; border: 1px solid rgba(5,150,105,.3); }
+  .badge-red  { background: rgba(220,38,38,.2); color: #f87171; border: 1px solid rgba(220,38,38,.3); }
+
+  /* ── Sections ── */
+  section { margin-bottom: 64px; scroll-margin-top: 32px; }
+  h2 { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 8px;
+       padding-bottom: 12px; border-bottom: 2px solid var(--blue); }
+  h3 { font-size: 18px; font-weight: 700; color: var(--navy2); margin: 28px 0 12px; }
+  h4 { font-size: 15px; font-weight: 600; color: var(--slate); margin: 20px 0 8px; }
+  p  { color: var(--slate); margin-bottom: 14px; }
+  ul, ol { padding-left: 24px; color: var(--slate); margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--navy); }
+
+  /* ── Cards ── */
+  .card { background: var(--white); border: 1px solid var(--border);
+          border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card-blue { border-left: 4px solid var(--blue); }
+  .card-teal { border-left: 4px solid var(--teal); }
+  .card-red  { border-left: 4px solid var(--red); }
+  .card-green { border-left: 4px solid var(--green); }
+  .card-amber { border-left: 4px solid var(--amber); }
+  .card-purple { border-left: 4px solid var(--purple); }
+
+  /* ── Node cards ── */
+  .node-card { border-radius: 12px; padding: 28px; margin-bottom: 24px; }
+  .node-llm  { background: var(--blue-light); border: 1px solid #bae6fd; }
+  .node-tool { background: var(--teal-light);  border: 1px solid #99f6e4; }
+  .node-card h3 { margin-top: 0; }
+  .node-badge { display: inline-block; padding: 3px 10px; border-radius: 6px;
+                font-size: 11px; font-weight: 700; text-transform: uppercase;
+                letter-spacing: .5px; margin-bottom: 12px; }
+  .nb-llm  { background: #0ea5e9; color: white; }
+  .nb-tool { background: #0d9488; color: white; }
+  .nb-terminal { background: #7c3aed; color: white; }
+
+  /* ── Code ── */
+  pre { background: var(--code-bg); color: var(--code-text); border-radius: 10px;
+        padding: 20px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 16px 0; font-family: 'Cascadia Code','Fira Code','Courier New',monospace; }
+  code { background: #e2e8f0; color: #0f172a; padding: 2px 6px;
+         border-radius: 4px; font-size: 12.5px;
+         font-family: 'Cascadia Code','Fira Code','Courier New',monospace; }
+  pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+  .cm  { color: #94a3b8; } /* comment */
+  .kw  { color: #7dd3fc; } /* keyword */
+  .fn  { color: #a5f3fc; } /* function */
+  .st  { color: #86efac; } /* string */
+  .nu  { color: #fca5a5; } /* number */
+  .cl  { color: #fde68a; } /* class */
+  .dc  { color: #818cf8; } /* decorator */
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th { background: var(--navy); color: white; padding: 10px 14px; text-align: left;
+       font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--slate); }
+  tr:hover td { background: var(--bg); }
+  .rule-skip   { color: var(--amber); font-weight: 700; }
+  .rule-alert  { color: var(--red);   font-weight: 700; }
+  .rule-kill   { color: var(--blue);  font-weight: 700; }
+
+  /* ── Callout ── */
+  .callout { border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .callout-blue  { background: var(--blue-light); border: 1px solid #bae6fd; }
+  .callout-amber { background: #fffbeb; border: 1px solid #fde68a; }
+  .callout-green { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .callout-red   { background: #fef2f2; border: 1px solid #fecaca; }
+  .callout h4 { margin-top: 0; margin-bottom: 8px; }
+
+  /* ── Comparison table ── */
+  .compare th:nth-child(1) { background: var(--purple); }
+  .compare th:nth-child(2) { background: var(--blue-dark); }
+  .compare td { font-size: 13px; font-family: 'Cascadia Code','Fira Code',monospace; }
+
+  /* ── Tool grid ── */
+  .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .tool-item { background: var(--white); border: 1px solid var(--border);
+               border-radius: 10px; padding: 16px; }
+  .tool-item h4 { margin: 0 0 6px; color: var(--blue); font-size: 14px; }
+  .tool-item p  { margin: 0; font-size: 13px; }
+
+  /* ── Rule badges ── */
+  .rl { display: inline-block; background: var(--navy); color: white;
+        border-radius: 5px; padding: 1px 7px; font-size: 12px; font-weight: 700;
+        margin-right: 6px; }
+
+  /* ── Pipeline steps ── */
+  .pipeline { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+  .pipe-node { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  .pipe-llm  { background: var(--blue-light); color: var(--blue-dark); border: 1px solid #7dd3fc; }
+  .pipe-tool { background: var(--teal-light); color: var(--teal); border: 1px solid #5eead4; }
+  .pipe-arr  { color: var(--muted); font-size: 18px; }
+
+  footer { text-align: center; padding: 40px; color: var(--muted); font-size: 13px;
+           border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h2>⚡ MAF Blocking Agent</h2>
+    <p>Microsoft Agent Framework</p>
+  </div>
+  <div class="nav">
+    <div class="nav-section">Getting Started</div>
+    <a href="#overview">🏠 Overview</a>
+    <a href="#layman">💬 Plain English</a>
+    <a href="#vs-langgraph">⚖️ vs LangGraph</a>
+    <div class="nav-section">Architecture</div>
+    <a href="#flow">🗺️ Flow Diagram</a>
+    <a href="#main">▶️ main.py</a>
+    <a href="#workflow">🔗 WorkflowBuilder</a>
+    <a href="#shim">🔧 agent_framework shim</a>
+    <a href="#state">📦 BlockingState</a>
+    <div class="nav-section">Executors</div>
+    <a href="#detection">🔍 Detection</a>
+    <a href="#analyzer">🧠 Analyzer</a>
+    <a href="#determination">⚖️ Determination</a>
+    <a href="#action">⚡ Action</a>
+    <a href="#rca">📋 RCA</a>
+    <a href="#notification">🔔 Notification</a>
+    <div class="nav-section">Tools & Safety</div>
+    <a href="#tools">🛠️ 13 Tools</a>
+    <a href="#governance">🛡️ Governance Rules</a>
+    <a href="#security">🔒 Security</a>
+    <a href="#errors">⚠️ Error Handling</a>
+    <a href="#performance">⚡ Performance</a>
+    <a href="#config">⚙️ Configuration</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <h1>SQL Server Blocking Agent<br>Microsoft Agent Framework</h1>
+  <p>An autonomous AI agent that watches your SQL Server 24/7, detects query blocking, reasons about it using GPT-4.1, and kills the blocker — safely, with a full audit trail.</p>
+  <div class="badges">
+    <span class="badge badge-blue">Microsoft Agent Framework</span>
+    <span class="badge badge-blue">WorkflowBuilder</span>
+    <span class="badge badge-blue">FoundryChatClient</span>
+    <span class="badge badge-teal">GPT-4.1</span>
+    <span class="badge badge-green">DRY_RUN=true by default</span>
+    <span class="badge badge-teal">8 Governance Rules</span>
+    <span class="badge badge-red">Zero LangChain / LangGraph</span>
+  </div>
+</div>
+
+<!-- ─── OVERVIEW ─────────────────────────────────────────────────────── -->
+<section id="overview">
+  <h2>Overview</h2>
+  <p>This is the <strong>Microsoft Agent Framework (MAF)</strong> rewrite of the SQL Server Blocking Agent. It does exactly the same job as the LangGraph version in the companion repo (<code>sql-blocking-agent/</code>), but uses a completely different technology stack — zero LangChain, zero LangGraph.</p>
+
+  <div class="pipeline">
+    <span class="pipe-tool pipe-node">🔍 Detect</span>
+    <span class="pipe-arr">→</span>
+    <span class="pipe-llm pipe-node">🧠 Analyze</span>
+    <span class="pipe-arr">→</span>
+    <span class="pipe-llm pipe-node">⚖️ Determine</span>
+    <span class="pipe-arr">→</span>
+    <span class="pipe-tool pipe-node">⚡ Kill</span>
+    <span class="pipe-arr">→</span>
+    <span class="pipe-llm pipe-node">📋 RCA</span>
+    <span class="pipe-arr">→</span>
+    <span class="pipe-tool pipe-node">🔔 Notify</span>
+  </div>
+
+  <div class="callout callout-blue">
+    <h4>🗂️ Project Location</h4>
+    <p style="margin:0">This repo lives at <code>c:\Python\ms-blocking-agent\</code> and is published to GitHub at <strong>venyel238/sql-blocking-agent-maf</strong>. The companion LangGraph version is at <code>c:\Python\sql-blocking-agent\</code>.</p>
+  </div>
+</section>
+
+<!-- ─── PLAIN ENGLISH ─────────────────────────────────────────────────── -->
+<section id="layman">
+  <h2>💬 What Is This? (Plain English)</h2>
+  <div class="card card-blue">
+    <h3 style="margin-top:0">Imagine a Security Guard for Your Database</h3>
+    <p>A SQL Server database handles many users and applications at the same time. Sometimes one user or program holds a "lock" on data — like holding a file open — and everyone else has to wait. If this goes on too long, your application grinds to a halt. We call this <strong>blocking</strong>.</p>
+    <p>This agent is an <strong>automated security guard</strong>. Every 45 seconds it checks: "Is anyone being blocked right now?" If yes, it investigates — it reads dozens of database metrics, sends everything to an AI (GPT-4.1), and asks: "Is this serious enough to kill the offending connection?"</p>
+    <p>Before it does anything dangerous, it checks <strong>8 safety rules</strong> written in code that the AI <em>cannot</em> override. Only if all rules pass does it pull the trigger. After killing the blocker, it writes a permanent audit record and generates a root-cause analysis report explaining <em>why</em> the blocking happened and how to prevent it.</p>
+    <p>It runs as a <strong>Microsoft Agent Framework workflow</strong> — a sequence of steps (called <em>executors</em>) where each step either queries the database, calls the AI, or writes results. It replaces the LangGraph version without changing any of the underlying SQL logic.</p>
+  </div>
+</section>
+
+<!-- ─── vs LANGGRAPH ─────────────────────────────────────────────────── -->
+<section id="vs-langgraph">
+  <h2>⚖️ MAF vs LangGraph — What Changed</h2>
+  <p>The business logic (SQL queries, governance rules, LLM prompts) is <strong>identical</strong>. Only the orchestration framework changed.</p>
+  <table class="compare">
+    <tr><th>LangGraph (sql-blocking-agent)</th><th>MAF (ms-blocking-agent)</th></tr>
+    <tr><td>StateGraph + compile()</td><td>WorkflowBuilder + build()</td></tr>
+    <tr><td>def node(state: dict, config: RunnableConfig)</td><td>@executor(id="...") async def node(state, context)</td></tr>
+    <tr><td>return {"field": value}</td><td>state.field = value; await context.send_message(state)</td></tr>
+    <tr><td>add_conditional_edges("node", fn, map)</td><td>FanOutEdgeGroup(source_id, target_ids, selection_func)</td></tr>
+    <tr><td>add_edge("notification", END)</td><td>await context.yield_output(state)</td></tr>
+    <tr><td>ChatOpenAI</td><td>FoundryChatClient + ChatAgent</td></tr>
+    <tr><td>RunnableConfig["configurable"] injected</td><td>get_config() singleton</td></tr>
+    <tr><td>BlockingAgentState (TypedDict)</td><td>BlockingState (Pydantic BaseModel)</td></tr>
+    <tr><td>AGENT_GRAPH.ainvoke(dict)</td><td>await AGENT_WORKFLOW.run(BlockingState(...))</td></tr>
+    <tr><td>langchain, langgraph, langchain-openai</td><td>openai, pydantic, pyodbc (no langchain)</td></tr>
+  </table>
+</section>
+
+<!-- ─── FLOW DIAGRAM ─────────────────────────────────────────────────── -->
+<section id="flow">
+  <h2>🗺️ Workflow Flow Diagram</h2>
+  <p>Blue boxes = LLM nodes. Teal boxes = tool-only (no LLM). Diamonds = routing decisions.</p>
+
+  <svg viewBox="0 0 820 680" style="width:100%;max-width:820px;display:block;margin:0 auto;font-family:-apple-system,sans-serif;">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+      </marker>
+      <marker id="arr-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#0ea5e9"/>
+      </marker>
+    </defs>
+
+    <!-- main() -->
+    <rect x="310" y="20" width="200" height="44" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <text x="410" y="47" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="600">main() → polling loop</text>
+
+    <!-- Arrow -->
+    <line x1="410" y1="64" x2="410" y2="88" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Detection -->
+    <rect x="280" y="88" width="260" height="56" rx="10" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="410" y="110" text-anchor="middle" fill="white" font-size="13" font-weight="700">🔍 detection_node</text>
+    <text x="410" y="130" text-anchor="middle" fill="#ccfbf1" font-size="11">@executor(id="detection") — 6 DMV tools</text>
+
+    <!-- Arrow down -->
+    <line x1="410" y1="144" x2="410" y2="175" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Diamond: has_blocking? -->
+    <polygon points="410,175 490,215 410,255 330,215" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+    <text x="410" y="210" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">has_blocking?</text>
+    <text x="410" y="228" text-anchor="middle" fill="#94a3b8" font-size="10">route_after_detection()</text>
+
+    <!-- YES arrow → Analyzer -->
+    <line x1="410" y1="255" x2="410" y2="282" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+    <text x="418" y="272" fill="#0ea5e9" font-size="11" font-weight="700">YES</text>
+
+    <!-- Analyzer -->
+    <rect x="280" y="282" width="260" height="56" rx="10" fill="#0ea5e9" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="410" y="304" text-anchor="middle" fill="white" font-size="13" font-weight="700">🧠 analyzer_node</text>
+    <text x="410" y="324" text-anchor="middle" fill="#e0f2fe" font-size="11">@executor(id="analyzer") — LLM analysis</text>
+
+    <!-- Arrow down -->
+    <line x1="410" y1="338" x2="410" y2="362" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Determination -->
+    <rect x="280" y="362" width="260" height="56" rx="10" fill="#0ea5e9" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="410" y="384" text-anchor="middle" fill="white" font-size="13" font-weight="700">⚖️ determination_node</text>
+    <text x="410" y="404" text-anchor="middle" fill="#e0f2fe" font-size="11">@executor — 8 hard gates + LLM</text>
+
+    <!-- Arrow down -->
+    <line x1="410" y1="418" x2="410" y2="448" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Diamond: decision==KILL? -->
+    <polygon points="410,448 510,488 410,528 310,488" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+    <text x="410" y="483" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">decision==KILL?</text>
+    <text x="410" y="501" text-anchor="middle" fill="#94a3b8" font-size="10">route_after_determination()</text>
+
+    <!-- YES → Action (left branch) -->
+    <line x1="310" y1="488" x2="200" y2="488" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+    <text x="256" y="480" text-anchor="middle" fill="#0ea5e9" font-size="11" font-weight="700">YES</text>
+
+    <!-- Action box -->
+    <rect x="80" y="462" width="120" height="52" rx="10" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="140" y="483" text-anchor="middle" fill="white" font-size="12" font-weight="700">⚡ action</text>
+    <text x="140" y="501" text-anchor="middle" fill="#ccfbf1" font-size="10">KILL + validate</text>
+
+    <!-- Action → RCA (down-left) -->
+    <line x1="140" y1="514" x2="140" y2="560" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="140" y1="560" x2="280" y2="590" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- NO → RCA (right side skips action) -->
+    <line x1="510" y1="488" x2="620" y2="488" stroke="#64748b" stroke-width="1.5"/>
+    <text x="562" y="480" text-anchor="middle" fill="#94a3b8" font-size="11">NO</text>
+    <line x1="620" y1="488" x2="620" y2="590" stroke="#64748b" stroke-width="1.5"/>
+    <line x1="620" y1="590" x2="540" y2="590" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- RCA -->
+    <rect x="280" y="568" width="260" height="52" rx="10" fill="#0ea5e9" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="410" y="590" text-anchor="middle" fill="white" font-size="13" font-weight="700">📋 rca_node</text>
+    <text x="410" y="608" text-anchor="middle" fill="#e0f2fe" font-size="11">@executor — LLM root-cause analysis</text>
+
+    <!-- Arrow down -->
+    <line x1="410" y1="620" x2="410" y2="644" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Notification -->
+    <rect x="260" y="644" width="300" height="56" rx="10" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="410" y="666" text-anchor="middle" fill="white" font-size="13" font-weight="700">🔔 notification_node</text>
+    <text x="410" y="684" text-anchor="middle" fill="#ddd6fe" font-size="11">yield_output(state) — terminal executor</text>
+
+    <!-- NO BLOCKING bypass: diamond → notification -->
+    <line x1="490" y1="215" x2="750" y2="215" stroke="#64748b" stroke-width="1.5"/>
+    <text x="622" y="207" text-anchor="middle" fill="#94a3b8" font-size="11">NO blocking</text>
+    <line x1="750" y1="215" x2="750" y2="672" stroke="#64748b" stroke-width="1.5"/>
+    <line x1="750" y1="672" x2="560" y2="672" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Legend -->
+    <rect x="20" y="20" width="240" height="110" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="32" y="42" fill="#0f172a" font-size="12" font-weight="700">Legend</text>
+    <rect x="32" y="52" width="14" height="14" rx="3" fill="#0ea5e9"/>
+    <text x="52" y="64" fill="#475569" font-size="11">LLM executor (calls GPT-4.1)</text>
+    <rect x="32" y="76" width="14" height="14" rx="3" fill="#0d9488"/>
+    <text x="52" y="88" fill="#475569" font-size="11">Tool executor (deterministic SQL)</text>
+    <rect x="32" y="100" width="14" height="14" rx="3" fill="#7c3aed"/>
+    <text x="52" y="112" fill="#475569" font-size="11">Terminal executor (yield_output)</text>
+    <polygon points="54,120 70,132 54,144 38,132" fill="#334155" stroke="#475569" stroke-width="1"/>
+    <text x="78" y="136" fill="#475569" font-size="11">Routing decision (selection_func)</text>
+  </svg>
+</section>
+
+<!-- ─── MAIN.PY ─────────────────────────────────────────────────────── -->
+<section id="main">
+  <h2>▶️ Entry Point — main.py</h2>
+  <p><strong>Plain English:</strong> This is where the agent starts. Python runs <code>main()</code>, which reads all configuration, then enters an infinite loop — checking for blocking every 45 seconds (adjustable). Each check is called a <em>cycle</em>.</p>
+
+  <div class="card card-blue">
+    <h4>What happens on startup</h4>
+    <ol>
+      <li><strong>Load .env file</strong> — reads API keys and server names from a config file</li>
+      <li><strong>load_config()</strong> — reads additional settings from SQL Server's AgentConfigDB table, stores them in a global singleton so all code can access them without passing parameters around</li>
+      <li><strong>Enter polling loop</strong> — runs one cycle, sleeps, repeats forever until Ctrl+C</li>
+    </ol>
+  </div>
+
+<pre><code><span class="cm"># main.py — entry point</span>
+<span class="kw">import</span> asyncio, sys, os, uuid
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="cm"># Load .env BEFORE importing agents (they need API keys at import time)</span>
+<span class="fn">load_dotenv</span>()
+
+<span class="cm"># Add src/ to Python's search path so "from orchestrator.x import y" works</span>
+sys.path.insert(<span class="nu">0</span>, str(Path(__file__).parent / <span class="st">"src"</span>))
+
+<span class="kw">from</span> orchestrator.config   <span class="kw">import</span> load_config     <span class="cm"># reads SQL Server config table</span>
+<span class="kw">from</span> orchestrator.state    <span class="kw">import</span> BlockingState    <span class="cm"># Pydantic model for cycle data</span>
+<span class="kw">from</span> orchestrator.workflow <span class="kw">import</span> AGENT_WORKFLOW   <span class="cm"># the compiled MAF workflow</span>
+
+<span class="kw">async def</span> <span class="fn">run_cycle</span>(config: dict) -> BlockingState:
+    initial = <span class="cl">BlockingState</span>(
+        server_name=config[<span class="st">"server_name"</span>],   <span class="cm"># which SQL Server to monitor</span>
+        correlation_id=str(uuid.uuid4())[:<span class="nu">8</span>], <span class="cm"># unique ID for log correlation</span>
+        dry_run=config[<span class="st">"dry_run"</span>],            <span class="cm"># True = never actually KILL</span>
+        cycle_start_utc=datetime.now(timezone.utc).isoformat(),
+    )
+    <span class="cm"># Run all executors in sequence — returns the final BlockingState</span>
+    <span class="cm"># from notification_node.yield_output()</span>
+    <span class="kw">return await</span> AGENT_WORKFLOW.<span class="fn">run</span>(initial)
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    config = <span class="fn">load_config</span>()       <span class="cm"># sets _ACTIVE_CONFIG singleton</span>
+    poll_seconds = config[<span class="st">"poll_interval_seconds"</span>]  <span class="cm"># default: 45s</span>
+    <span class="kw">while True</span>:
+        <span class="kw">try</span>:
+            <span class="kw">await</span> <span class="fn">run_cycle</span>(config)
+        <span class="kw">except</span> Exception <span class="kw">as</span> e:
+            log.<span class="fn">error</span>(<span class="st">"Cycle crashed: %s"</span>, e)     <span class="cm"># log but don't stop</span>
+        <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(poll_seconds)
+
+asyncio.<span class="fn">run</span>(<span class="fn">main</span>())
+</code></pre>
+</section>
+
+<!-- ─── WORKFLOWBUILDER ─────────────────────────────────────────────── -->
+<section id="workflow">
+  <h2>🔗 WorkflowBuilder — Wiring the Pipeline</h2>
+  <p><strong>Plain English:</strong> WorkflowBuilder is like a railway track layout. You specify which station (executor) comes after which, and optionally add a switch (FanOutEdgeGroup) so the train can go two different ways depending on what it finds. <code>builder.build()</code> finalises the track — it cannot be changed after that.</p>
+  <p>This replaces LangGraph's <code>StateGraph + add_conditional_edges + compile()</code>.</p>
+
+<pre><code><span class="cm"># orchestrator/workflow.py</span>
+<span class="kw">from</span> agent_framework <span class="kw">import</span> WorkflowBuilder, FanOutEdgeGroup
+
+<span class="kw">def</span> <span class="fn">build_workflow</span>():
+    <span class="cm"># Start the builder — detection is always the first executor</span>
+    builder = <span class="cl">WorkflowBuilder</span>(start_executor=detection_node)
+
+    <span class="cm"># After detection: go to analyzer (blocking found) OR notification (clean)</span>
+    builder.<span class="fn">add_edge_group</span>(<span class="cl">FanOutEdgeGroup</span>(
+        source_id=<span class="st">"detection"</span>,
+        target_ids=[<span class="st">"analyzer"</span>, <span class="st">"notification"</span>],
+        selection_func=route_after_detection,   <span class="cm"># returns list[str]</span>
+    ))
+
+    <span class="cm"># analyzer always flows to determination</span>
+    builder.<span class="fn">add_edge</span>(analyzer_node, determination_node)
+
+    <span class="cm"># After determination: go to action (KILL) OR rca (ALERT/SKIP)</span>
+    builder.<span class="fn">add_edge_group</span>(<span class="cl">FanOutEdgeGroup</span>(
+        source_id=<span class="st">"determination"</span>,
+        target_ids=[<span class="st">"action"</span>, <span class="st">"rca"</span>],
+        selection_func=route_after_determination,
+    ))
+
+    <span class="cm"># action → rca → notification (linear tail)</span>
+    builder.<span class="fn">add_edge</span>(action_node, rca_node)
+    builder.<span class="fn">add_edge</span>(rca_node, notification_node)
+
+    <span class="kw">return</span> builder.<span class="fn">build</span>()           <span class="cm"># compiles — immutable from here</span>
+
+AGENT_WORKFLOW = <span class="fn">build_workflow</span>()   <span class="cm"># created once at import time</span>
+</code></pre>
+
+  <h3>Routing Functions</h3>
+  <p>These are the "switch controllers" — called by <code>FanOutEdgeGroup</code> after each conditional node. They return a <strong>list of strings</strong> (executor IDs to run next):</p>
+<pre><code><span class="cm"># orchestrator/router.py</span>
+<span class="kw">def</span> <span class="fn">route_after_detection</span>(state: BlockingState) -> list[str]:
+    <span class="kw">return</span> [<span class="st">"analyzer"</span>] <span class="kw">if</span> state.<span class="fn">get</span>(<span class="st">"has_blocking"</span>) <span class="kw">else</span> [<span class="st">"notification"</span>]
+
+<span class="kw">def</span> <span class="fn">route_after_determination</span>(state: BlockingState) -> list[str]:
+    <span class="kw">return</span> [<span class="st">"action"</span>] <span class="kw">if</span> state.<span class="fn">get</span>(<span class="st">"decision"</span>) == <span class="st">"KILL"</span> <span class="kw">else</span> [<span class="st">"rca"</span>]
+</code></pre>
+  <div class="callout callout-blue">
+    <h4>Key difference from LangGraph</h4>
+    <p style="margin:0">LangGraph routing returns a single <code>str</code>. MAF routing returns <code>list[str]</code> to support true fan-out (running multiple executors in parallel). In this graph we always return a list with one item, but the API supports real parallelism.</p>
+  </div>
+</section>
+
+<!-- ─── AGENT_FRAMEWORK SHIM ──────────────────────────────────────────── -->
+<section id="shim">
+  <h2>🔧 The agent_framework Shim</h2>
+  <p><strong>Plain English:</strong> Microsoft Agent Framework 1.0 is a new SDK. To make this code runnable immediately without needing preview access, we built a compatibility shim — a small Python package (<code>src/agent_framework/</code>) that implements the MAF API on top of the standard <code>openai</code> library. Think of it as a translation layer.</p>
+
+  <div class="tool-grid">
+    <div class="tool-item">
+      <h4>WorkflowContext</h4>
+      <p>Passed to every executor. <code>send_message(state)</code> forwards state to the next executor. <code>yield_output(state)</code> marks the terminal node — the workflow stops and returns this state.</p>
+    </div>
+    <div class="tool-item">
+      <h4>@executor(id="...")</h4>
+      <p>A decorator that tags an <code>async def</code> function with an executor ID. WorkflowBuilder uses this ID to wire up edges.</p>
+    </div>
+    <div class="tool-item">
+      <h4>FoundryChatClient</h4>
+      <p>Wraps <code>openai.OpenAI</code> to accept a <code>project_endpoint</code> and a credential object. Handles both API key auth and managed identity auth.</p>
+    </div>
+    <div class="tool-item">
+      <h4>ChatAgent</h4>
+      <p>A thin async wrapper: takes a <code>FoundryChatClient</code> and a system prompt, exposes <code>await agent.run(user_message)</code> returning a result with a <code>.content</code> string.</p>
+    </div>
+  </div>
+
+<pre><code><span class="cm"># src/agent_framework/__init__.py — simplified view</span>
+
+<span class="kw">class</span> <span class="cl">WorkflowContext</span>:
+    <span class="kw">async def</span> <span class="fn">send_message</span>(self, state):
+        self._next_state = state       <span class="cm"># forward to next executor</span>
+    <span class="kw">async def</span> <span class="fn">yield_output</span>(self, state):
+        self._output = state           <span class="cm"># stop workflow, return this</span>
+        self._terminal = <span class="kw">True</span>
+
+<span class="kw">def</span> <span class="fn">executor</span>(id: str):
+    <span class="kw">def</span> <span class="fn">decorator</span>(fn):
+        fn._executor_id = id           <span class="cm"># tags the function</span>
+        <span class="kw">return</span> fn
+    <span class="kw">return</span> decorator
+
+<span class="kw">class</span> <span class="cl">Workflow</span>:
+    <span class="kw">async def</span> <span class="fn">run</span>(self, initial_state):
+        state = initial_state
+        current_id = self._start_id
+        <span class="kw">while</span> current_id:
+            fn = self._executors[current_id]
+            ctx = <span class="cl">WorkflowContext</span>()
+            <span class="kw">await</span> <span class="fn">fn</span>(state, ctx)          <span class="cm"># call the executor</span>
+            <span class="kw">if</span> ctx._terminal:
+                <span class="kw">return</span> ctx._output        <span class="cm"># notification_node called yield_output</span>
+            state = ctx._next_state
+            current_id = self.<span class="fn">_next_ids</span>(current_id, state)[<span class="nu">0</span>]
+        <span class="kw">return</span> state
+</code></pre>
+</section>
+
+<!-- ─── BLOCKINGSTATE ─────────────────────────────────────────────────── -->
+<section id="state">
+  <h2>📦 BlockingState — The Shared Data Object</h2>
+  <p><strong>Plain English:</strong> BlockingState is like a clipboard that gets passed from one executor to the next. Each executor reads what it needs, writes its results, and passes it on. By the time it reaches the last executor, it contains everything that happened during the cycle.</p>
+  <p>Unlike LangGraph (which uses a plain <code>dict</code>), MAF uses a <strong>Pydantic BaseModel</strong> — a typed Python object with validated fields. Executors write directly to attributes: <code>state.has_blocking = True</code> instead of returning <code>{"has_blocking": True}</code>.</p>
+
+  <table>
+    <tr><th>Field</th><th>Type</th><th>Set by</th><th>What it means</th></tr>
+    <tr><td><code>server_name</code></td><td>str</td><td>main.py</td><td>Which SQL Server is monitored</td></tr>
+    <tr><td><code>has_blocking</code></td><td>bool</td><td>detection</td><td>True if blocking was found this cycle</td></tr>
+    <tr><td><code>blocking_rows</code></td><td>list[dict]</td><td>detection</td><td>All blocked sessions from DMV</td></tr>
+    <tr><td><code>head_blocker</code></td><td>dict</td><td>detection</td><td>The session causing the chain (the one to kill)</td></tr>
+    <tr><td><code>scenario_id</code></td><td>int</td><td>detection</td><td>KB scenario 1–7 (classification of blocking type)</td></tr>
+    <tr><td><code>log_used_pct</code></td><td>float</td><td>detection</td><td>Transaction log fullness % (for R9 gate)</td></tr>
+    <tr><td><code>llm_analysis</code></td><td>str</td><td>analyzer</td><td>GPT-4.1's plain-English analysis of the blocking</td></tr>
+    <tr><td><code>severity_hint</code></td><td>enum</td><td>analyzer</td><td>LOW / MEDIUM / HIGH / CRITICAL</td></tr>
+    <tr><td><code>decision</code></td><td>enum</td><td>determination</td><td>KILL / ALERT_ONLY / SKIP</td></tr>
+    <tr><td><code>rule_triggered</code></td><td>int</td><td>determination</td><td>Which governance rule forced the decision (0 = LLM decided)</td></tr>
+    <tr><td><code>kill_executed</code></td><td>bool</td><td>action</td><td>True if KILL was actually issued</td></tr>
+    <tr><td><code>kill_status</code></td><td>str</td><td>action</td><td>SUCCESS / DRY_RUN_SIMULATED / SKIPPED / FAILED</td></tr>
+    <tr><td><code>killed_spid</code></td><td>int</td><td>action</td><td>The SPID that was killed</td></tr>
+    <tr><td><code>rca_report</code></td><td>str</td><td>rca</td><td>Root-cause analysis text</td></tr>
+    <tr><td><code>errors</code></td><td>list[str]</td><td>all nodes</td><td>Non-fatal errors collected during the cycle</td></tr>
+  </table>
+</section>
+
+<!-- ─── DETECTION ─────────────────────────────────────────────────────── -->
+<section id="detection">
+  <h2>🔍 Executor 1 — detection_node</h2>
+  <div class="node-card node-tool">
+    <span class="node-badge nb-tool">Tool Executor — No LLM</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> This is the agent's eyes. It runs 6 different SQL queries against the database's internal monitoring tables (called DMVs — Dynamic Management Views) to build a complete picture of any blocking. No AI is involved — it's pure, fast database queries.</p>
+    <p>It looks at: who is blocking whom, how long they've been waiting, what lock they're holding, whether the transaction log is nearly full, whether the blocker's query has a bad execution plan, and what category of blocking this is.</p>
+    <p>If nothing is blocking, it short-circuits to notification immediately. This keeps the cycle cheap — no LLM cost on a clean system.</p>
+
+    <h4>The 6 tools it calls (in order):</h4>
+    <ol>
+      <li><strong>detect_blocking()</strong> — scans <code>sys.dm_exec_requests</code> to find sessions blocking others. Identifies the head blocker (the root cause), all victims, wait times, and the full blocking chain.</li>
+      <li><strong>analyze_log_safety()</strong> — checks the transaction log fullness. If it's &gt;80%, killing a session could trigger a large rollback that fills the log entirely. This feeds into governance rule R9.</li>
+      <li><strong>analyze_locks()</strong> — reads <code>sys.dm_tran_locks</code> to determine what type of lock is held (shared, exclusive, update), what object/row it's on, and whether lock escalation occurred.</li>
+      <li><strong>analyze_plan_cache()</strong> — retrieves the execution plan XML for the blocking query. Checks for parallelism (CXPACKET waits), parameter sniffing issues, and missing indexes.</li>
+      <li><strong>analyze_query_store()</strong> — checks Query Store for the query's execution history. Did performance suddenly get worse? Is there a better plan available?</li>
+      <li><strong>classify_scenario()</strong> — classifies the blocking into one of 7 KB (Knowledge Base) scenarios, e.g. scenario 6 = "idle session with open transaction" (the classic case where a developer forgot to commit).</li>
+    </ol>
+  </div>
+
+<pre><code><span class="cm"># agents/detector/agent.py</span>
+<span class="dc">@executor</span>(id=<span class="st">"detection"</span>)                <span class="cm"># ← MAF decorator — gives this fn an ID</span>
+<span class="kw">async def</span> <span class="fn">detection_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()                    <span class="cm"># reads _ACTIVE_CONFIG singleton</span>
+    agent = <span class="cl">BaseAgent</span>(cfg)
+
+    <span class="cm"># Tool 1: detect blocking chains</span>
+    result = <span class="fn">detect_blocking</span>(<span class="cl">DetectionInput</span>(
+        monitor_conn_str=agent.monitor_conn_str,
+        kill_threshold_ms=cfg[<span class="st">"kill_threshold_ms"</span>],
+    ), query_sql=agent.query_sql)
+
+    state.has_blocking  = result.has_blocking
+    state.blocking_rows = result.blocking_rows
+    state.head_blocker  = result.head_blocker
+
+    <span class="kw">if not</span> state.has_blocking:
+        <span class="kw">await</span> context.<span class="fn">send_message</span>(state)   <span class="cm"># route_after_detection → "notification"</span>
+        <span class="kw">return</span>
+
+    <span class="cm"># Tools 2–6: only run if blocking was found</span>
+    <span class="cm"># (saves time on clean cycles)</span>
+    log_result = <span class="fn">analyze_log_safety</span>(...)
+    state.log_used_pct = log_result.log_used_pct
+
+    lock_result = <span class="fn">analyze_locks</span>(...)
+    state.lock_type = lock_result.lock_type
+
+    plan_result = <span class="fn">analyze_plan_cache</span>(...)
+    state.plan_cache_hit = plan_result.plan_cache_hit
+
+    qs_result = <span class="fn">analyze_query_store</span>(...)
+    state.qs_better_plan_exists = qs_result.better_plan_exists
+
+    scenario = <span class="fn">classify_scenario</span>(...)
+    state.scenario_id = scenario.scenario_id
+
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)      <span class="cm"># route_after_detection → "analyzer"</span>
+</code></pre>
+</section>
+
+<!-- ─── ANALYZER ──────────────────────────────────────────────────────── -->
+<section id="analyzer">
+  <h2>🧠 Executor 2 — analyzer_node</h2>
+  <div class="node-card node-llm">
+    <span class="node-badge nb-llm">LLM Executor — GPT-4.1</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> The Analyzer is the agent's first consultation with the AI. It takes all the raw numbers from the detection step — wait times, lock modes, plan XML, scenario type — and asks GPT-4.1 to synthesize them into a human-readable explanation.</p>
+    <p>Think of it as the AI writing a paragraph: "Session 99 has been holding an exclusive lock on dbo.BlockingTest for 44 seconds, blocking svc_appaccount. The query is an idle transaction (scenario 6). The plan shows no parallelism issues. Severity: HIGH."</p>
+    <p>This analysis is then passed to the Determination node to inform the kill decision. The AI doesn't decide whether to kill here — it only diagnoses.</p>
+    <p>The LLM call uses <code>await self.ask_llm_json()</code> — an <strong>async</strong> coroutine. This is the key MAF difference: all LLM calls are non-blocking <code>async</code> operations.</p>
+  </div>
+
+<pre><code><span class="cm"># agents/analyzer/agent.py</span>
+<span class="kw">class</span> <span class="cl">AnalyzerAgent</span>(BaseAgent):
+    <span class="kw">async def</span> <span class="fn">run</span>(self, state: BlockingState) -> dict:
+        user_msg = <span class="fn">build_user_message</span>(state)          <span class="cm"># assembles JSON diagnostic data</span>
+        raw = <span class="kw">await</span> self.<span class="fn">ask_llm_json</span>(SYSTEM_PROMPT, user_msg)
+        result = <span class="cl">AnalyzerLLMResult</span>(**raw)             <span class="cm"># validated Pydantic model</span>
+        <span class="kw">return</span> {<span class="st">"llm_analysis"</span>: result.analysis,
+                <span class="st">"severity_hint"</span>: result.severity,
+                <span class="st">"diagnosis"</span>: result.diagnosis}
+
+<span class="dc">@executor</span>(id=<span class="st">"analyzer"</span>)
+<span class="kw">async def</span> <span class="fn">analyzer_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()
+    updates = <span class="kw">await</span> <span class="cl">AnalyzerAgent</span>(cfg).<span class="fn">run</span>(state)
+    state.llm_analysis = updates[<span class="st">"llm_analysis"</span>]   <span class="cm"># AI narrative</span>
+    state.severity_hint = updates[<span class="st">"severity_hint"</span>]  <span class="cm"># LOW/MEDIUM/HIGH/CRITICAL</span>
+    state.diagnosis     = updates[<span class="st">"diagnosis"</span>]       <span class="cm"># structured findings</span>
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)               <span class="cm"># always goes to determination</span>
+</code></pre>
+
+  <div class="callout callout-blue">
+    <h4>async vs sync — the MAF difference</h4>
+    <p style="margin:0">In LangGraph, <code>ask_llm()</code> was synchronous. In MAF, it is <code>async def ask_llm()</code> — an awaitable coroutine. The <code>await</code> keyword means Python can do other work while waiting for the GPT API to respond, making the system more efficient.</p>
+  </div>
+</section>
+
+<!-- ─── DETERMINATION ─────────────────────────────────────────────────── -->
+<section id="determination">
+  <h2>⚖️ Executor 3 — determination_node</h2>
+  <div class="node-card node-llm">
+    <span class="node-badge nb-llm">LLM Executor + Hard Gates</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> The Determination node is the judge. It makes the final KILL / ALERT_ONLY / SKIP decision. It works in two steps:</p>
+    <p><strong>Step 1 (Code rules):</strong> Before asking the AI anything, it checks 8 hard-coded safety rules. These are like laws — if any rule matches, the decision is forced and the AI never gets a say. This prevents the AI from making reckless decisions.</p>
+    <p><strong>Step 2 (AI decision):</strong> If no hard rule fired, the AI gets the full picture — analysis, diagnostics, scenario, log state — and decides: Is this worth killing? Is the risk acceptable?</p>
+    <p>The result (<code>KILL</code>, <code>ALERT_ONLY</code>, or <code>SKIP</code>) plus the reason are stored in state, and the router sends the workflow to <code>action</code> (if KILL) or <code>rca</code> (if not).</p>
+  </div>
+
+<pre><code><span class="dc">@executor</span>(id=<span class="st">"determination"</span>)
+<span class="kw">async def</span> <span class="fn">determination_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()
+    updates = <span class="kw">await</span> <span class="cl">DeterminationAgent</span>(cfg).<span class="fn">run</span>(state)
+    state.decision            = updates[<span class="st">"decision"</span>]          <span class="cm"># KILL / ALERT_ONLY / SKIP</span>
+    state.risk_level          = updates[<span class="st">"risk_level"</span>]
+    state.rule_triggered      = updates[<span class="st">"rule_triggered"</span>]     <span class="cm"># 0 = LLM decided</span>
+    state.decision_reason     = updates[<span class="st">"decision_reason"</span>]
+    state.dba_approval_required = updates[<span class="st">"dba_approval_required"</span>]
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)
+    <span class="cm"># → route_after_determination → ["action"] or ["rca"]</span>
+
+<span class="kw">class</span> <span class="cl">DeterminationAgent</span>(BaseAgent):
+    <span class="kw">async def</span> <span class="fn">run</span>(self, state: BlockingState) -> dict:
+        head = state.<span class="fn">get</span>(<span class="st">"head_blocker"</span>) or {}
+        spid = head.<span class="fn">get</span>(<span class="st">"session_id"</span>)
+
+        <span class="cm"># ── Step 1: hard gates — LLM cannot override these ──</span>
+        gate = self.<span class="fn">_check_hard_gates</span>(state, head, spid)
+        <span class="kw">if</span> gate:                               <span class="cm"># a rule matched</span>
+            decision, risk, reason, rule, dba = gate
+            <span class="kw">return</span> self.<span class="fn">_build_result</span>(decision, risk, reason, rule, dba)
+
+        <span class="cm"># ── Step 2: ask the LLM ──</span>
+        raw = <span class="kw">await</span> self.<span class="fn">ask_llm_json</span>(SYSTEM_PROMPT, user_msg)
+        <span class="kw">return</span> <span class="cl">DeterminationLLMResult</span>(**raw)
+</code></pre>
+</section>
+
+<!-- ─── ACTION ───────────────────────────────────────────────────────── -->
+<section id="action">
+  <h2>⚡ Executor 4 — action_node</h2>
+  <div class="node-card node-tool">
+    <span class="node-badge nb-tool">Tool Executor — No LLM</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> The Action node does the actual work. It only runs when the Determination node decided <code>KILL</code>. It is pure code — no AI involved.</p>
+    <p>Before pulling the trigger, it does one more safety check: it re-queries the session to confirm it still exists and still belongs to the same user account (SPID recycling protection — a security measure to prevent accidentally killing an innocent session that reused the same session ID).</p>
+    <p>If <code>dry_run=True</code> (the default), it logs "would have killed SPID X" but doesn't actually run the KILL command. This is the training wheels mode for safe testing.</p>
+    <p>If <code>dry_run=False</code>, it issues <code>KILL X</code>, then waits and checks that the session is truly gone (or rolling back). Finally, it writes a permanent record to <code>KillAuditLog</code>.</p>
+  </div>
+
+<pre><code><span class="dc">@executor</span>(id=<span class="st">"action"</span>)
+<span class="kw">async def</span> <span class="fn">action_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()
+    agent = <span class="cl">BaseAgent</span>(cfg)
+    head = state.<span class="fn">get</span>(<span class="st">"head_blocker"</span>) or {}
+
+    <span class="cm"># execute_kill: re-verifies SPID, then issues KILL (or simulates)</span>
+    exec_result = <span class="fn">execute_kill</span>(<span class="cl">SqlExecutorInput</span>(
+        monitor_conn_str=agent.monitor_conn_str,
+        session_id=head[<span class="st">"session_id"</span>],
+        login_name=head[<span class="st">"login_name"</span>],
+        dry_run=cfg[<span class="st">"dry_run"</span>],            <span class="cm"># True = simulate only</span>
+    ), query_sql=agent.query_sql)
+
+    <span class="cm"># validate_kill: confirms SPID is gone (SPID recycling protection)</span>
+    val_result = <span class="fn">validate_kill</span>(<span class="cl">SqlValidatorInput</span>(
+        monitor_conn_str=agent.monitor_conn_str,
+        session_id=head[<span class="st">"session_id"</span>],
+        expected_login=head.get(<span class="st">"login_name"</span>, <span class="st">""</span>),  <span class="cm"># Gap A: confirm same login</span>
+    ), query_sql=agent.query_sql)
+
+    state.kill_executed = exec_result.kill_issued
+    state.killed_spid   = exec_result.killed_spid
+    state.kill_status   = val_result.kill_status    <span class="cm"># SUCCESS / ROLLING_BACK / etc</span>
+    state.kill_time_utc = exec_result.kill_time_utc
+
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)              <span class="cm"># always goes to rca_node</span>
+</code></pre>
+</section>
+
+<!-- ─── RCA ───────────────────────────────────────────────────────────── -->
+<section id="rca">
+  <h2>📋 Executor 5 — rca_node</h2>
+  <div class="node-card node-llm">
+    <span class="node-badge nb-llm">LLM Executor</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> RCA stands for Root Cause Analysis. After the blocking is handled (killed or alerted), the agent asks GPT-4.1 one more question: "Why did this happen, and how can we prevent it?" It looks at the query's execution plan, the blocking scenario, and historical records (has this same user or query blocked before?) to generate actionable recommendations.</p>
+    <p>The result is a structured report: what caused the blocking, how often it recurs, and concrete fixes (add an index here, change this isolation level, reduce this connection pool size, add a MAXDOP hint).</p>
+
+    <div class="callout callout-amber">
+      <h4>⚠️ The Async/Sync Bridge</h4>
+      <p style="margin:0">The <code>tools/rca.py</code> tool takes a synchronous <code>ask_llm_json</code> callable (a plain function, not a coroutine). But MAF's <code>ask_llm_json</code> is <code>async</code>. The bridge: <code>ask_llm_json_sync()</code> in <code>BaseAgent</code> runs the async code in a dedicated thread using <code>ThreadPoolExecutor + asyncio.run()</code>, preventing "nested event loop" errors.</p>
+    </div>
+  </div>
+
+<pre><code><span class="dc">@executor</span>(id=<span class="st">"rca"</span>)
+<span class="kw">async def</span> <span class="fn">rca_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()
+    agent = <span class="cl">BaseAgent</span>(cfg)
+
+    rca_input = <span class="cl">RCAInput</span>(
+        head_blocker=state.head_blocker,
+        blocking_rows=state.blocking_rows,
+        scenario_id=state.scenario_id,
+        llm_analysis=state.llm_analysis,
+        <span class="cm"># ... other fields ...</span>
+    )
+
+    <span class="cm"># generate_rca() is a sync function that calls ask_llm_json_sync()</span>
+    <span class="cm"># which bridges async→sync via ThreadPoolExecutor</span>
+    result = <span class="fn">generate_rca</span>(rca_input, ask_llm_json=agent.ask_llm_json_sync)
+
+    state.rca_report = result.<span class="fn">to_text</span>()     <span class="cm"># plain-text report</span>
+    state.rca_data   = result.<span class="fn">model_dump</span>()  <span class="cm"># structured data for the HTML report</span>
+    <span class="kw">await</span> context.<span class="fn">send_message</span>(state)
+
+<span class="cm"># In BaseAgent — the async/sync bridge:</span>
+<span class="kw">def</span> <span class="fn">ask_llm_json_sync</span>(self, system_prompt, user_message) -> dict:
+    <span class="kw">with</span> concurrent.futures.<span class="cl">ThreadPoolExecutor</span>(max_workers=<span class="nu">1</span>) <span class="kw">as</span> pool:
+        future = pool.<span class="fn">submit</span>(
+            asyncio.run,
+            self.<span class="fn">ask_llm_json</span>(system_prompt, user_message),
+        )
+        <span class="kw">return</span> future.<span class="fn">result</span>()   <span class="cm"># blocks until done</span>
+</code></pre>
+</section>
+
+<!-- ─── NOTIFICATION ──────────────────────────────────────────────────── -->
+<section id="notification">
+  <h2>🔔 Executor 6 — notification_node</h2>
+  <div class="node-card node-tool">
+    <span class="node-badge nb-terminal">Terminal Executor</span>
+    <h3>What it does</h3>
+    <p><strong>Plain English:</strong> The Notification node always runs last — whether blocking was found or not. It writes the permanent record to the database, generates human-readable reports, and emails the DBA team if something serious happened.</p>
+    <p>The key MAF concept here is <code>yield_output(state)</code>. In LangGraph, the terminal node connects to a special <code>END</code> constant. In MAF, the terminal node signals completion by calling <code>await context.yield_output(state)</code> — this is what the <code>workflow.run()</code> call returns to <code>main.py</code>.</p>
+  </div>
+
+<pre><code><span class="dc">@executor</span>(id=<span class="st">"notification"</span>)
+<span class="kw">async def</span> <span class="fn">notification_node</span>(state: BlockingState, context: WorkflowContext) -> <span class="kw">None</span>:
+    cfg = <span class="fn">get_config</span>()
+
+    <span class="kw">if not</span> state.has_blocking:
+        <span class="kw">await</span> context.<span class="fn">yield_output</span>(state)  <span class="cm"># clean cycle — nothing to log</span>
+        <span class="kw">return</span>
+
+    errors = []
+
+    <span class="cm"># Write BlockingEventLog (permanent audit record)</span>
+    <span class="kw">try</span>:
+        <span class="fn">write_blocking_event</span>(<span class="cl">AuditLogInput</span>(...), ...)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        errors.<span class="fn">append</span>(str(e))     <span class="cm"># collect error, don't crash</span>
+
+    <span class="cm"># Render HTML + Markdown report</span>
+    <span class="kw">try</span>:
+        html_path = <span class="fn">render_reports</span>(<span class="cl">ReportInput</span>(...))
+        state.html_report_path = str(html_path)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        errors.<span class="fn">append</span>(str(e))
+
+    <span class="cm"># Email DBA if kill was executed or approval is needed</span>
+    <span class="kw">if</span> state.dba_approval_required <span class="kw">or</span> state.kill_executed:
+        <span class="kw">try</span>:
+            <span class="fn">send_dba_approval_email</span>(<span class="cl">DbaEmailInput</span>(...))
+        <span class="kw">except</span> Exception <span class="kw">as</span> e:
+            errors.<span class="fn">append</span>(str(e))
+
+    state.errors = errors
+
+    <span class="cm"># yield_output() — this is what AGENT_WORKFLOW.run() returns to main.py</span>
+    <span class="cm"># In LangGraph this was add_edge("notification", END)</span>
+    <span class="kw">await</span> context.<span class="fn">yield_output</span>(state)
+</code></pre>
+</section>
+
+<!-- ─── TOOLS ─────────────────────────────────────────────────────────── -->
+<section id="tools">
+  <h2>🛠️ The 13 Tools</h2>
+  <p>All 13 tools live in <code>src/tools/</code> and are <strong>identical</strong> to the LangGraph version. They contain zero LangChain or LangGraph imports — they are plain Python functions that take Pydantic input models and return Pydantic output models. This is why the MAF rewrite was safe: the hard part (the SQL logic) needed no changes at all.</p>
+
+  <div class="tool-grid">
+    <div class="tool-item">
+      <h4>detection.py</h4>
+      <p>Queries <code>sys.dm_exec_requests</code> and <code>sys.dm_exec_sessions</code> to find all blocking chains. Returns the head blocker, all victims, wait times, and login names.</p>
+    </div>
+    <div class="tool-item">
+      <h4>log_safety.py</h4>
+      <p>Runs <code>DBCC SQLPERF(LOGSPACE)</code> to check how full the transaction log is. A nearly-full log means killing a session could trigger a large rollback that fills the log entirely.</p>
+    </div>
+    <div class="tool-item">
+      <h4>locks.py</h4>
+      <p>Queries <code>sys.dm_tran_locks</code> to identify the type of lock (shared/exclusive/update), the locked object (table/row/page), and whether lock escalation occurred.</p>
+    </div>
+    <div class="tool-item">
+      <h4>plan_cache.py</h4>
+      <p>Retrieves the execution plan XML for the blocking query. Checks for parallelism (CXPACKET waits), parameter sniffing, and missing index suggestions.</p>
+    </div>
+    <div class="tool-item">
+      <h4>query_store.py</h4>
+      <p>Reads the Query Store (SQL Server's built-in plan history) to detect plan regressions — cases where a query suddenly started using a worse execution plan.</p>
+    </div>
+    <div class="tool-item">
+      <h4>scenario.py</h4>
+      <p>Classifies blocking into one of 7 KB scenarios: 1=implicit transactions, 2=cursor, 3=orphaned transaction, 4=DTC, 5=rolling back, 6=idle open transaction, 7=parallel query.</p>
+    </div>
+    <div class="tool-item">
+      <h4>sql_executor.py</h4>
+      <p>Issues the actual <code>KILL &lt;spid&gt;</code> command. First re-verifies the SPID still exists. In dry-run mode, logs the intended action without executing it.</p>
+    </div>
+    <div class="tool-item">
+      <h4>sql_validator.py</h4>
+      <p>After a KILL, confirms the SPID is gone from <code>sys.dm_exec_sessions</code>. Implements Gap A (SPID recycling protection): checks that the same login still owns the session before declaring success.</p>
+    </div>
+    <div class="tool-item">
+      <h4>audit_log.py</h4>
+      <p>Writes to two permanent tables in AgentLogDB: <code>BlockingEventLog</code> (every blocking event) and <code>KillAuditLog</code> (every kill action). These records are append-only and immutable.</p>
+    </div>
+    <div class="tool-item">
+      <h4>kill_rate.py</h4>
+      <p>Counts kills in the past hour from KillAuditLog. Used by governance rule R10 to prevent the agent from killing too aggressively. Configurable via <code>MAX_KILLS_PER_HOUR</code>.</p>
+    </div>
+    <div class="tool-item">
+      <h4>notifications.py</h4>
+      <p>Sends email to the DBA team via SMTP. Used when a kill is executed (notification) or when DBA approval is required (R9: log nearly full). Configurable SMTP settings.</p>
+    </div>
+    <div class="tool-item">
+      <h4>report_renderer.py</h4>
+      <p>Generates an HTML and Markdown report for each blocking event. The report includes all diagnostic details, the kill decision, the RCA, and recommendations. Saved to the <code>reports/</code> folder.</p>
+    </div>
+    <div class="tool-item">
+      <h4>rca.py</h4>
+      <p>Orchestrates the root-cause analysis. Queries historical recurrence data from AgentLogDB (has this blocker appeared before?), then calls the LLM via the <code>ask_llm_json_sync</code> bridge to generate recommendations.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── GOVERNANCE ─────────────────────────────────────────────────────── -->
+<section id="governance">
+  <h2>🛡️ Governance Rules — Code-Enforced Safety</h2>
+  <p><strong>Plain English:</strong> These 8 rules are the agent's conscience. They are written in Python code inside <code>_check_hard_gates()</code> and the LLM <em>cannot</em> override them. If any rule matches, the decision is forced before the AI ever gets asked. This is what makes the system safe enough to run autonomously in production.</p>
+
+  <div class="callout callout-red">
+    <h4>⚠️ The AI Never Overrides These Rules</h4>
+    <p style="margin:0">Rules R2–R14 are checked in code before the LLM is called. If a rule fires, the cycle returns ALERT_ONLY or SKIP regardless of what the LLM would have decided. This is intentional — it keeps a human in the loop for edge cases.</p>
+  </div>
+
+  <table>
+    <tr><th>Rule</th><th>Condition</th><th>Forced Decision</th><th>Why</th></tr>
+    <tr>
+      <td><span class="rl">R2</span></td>
+      <td>Wait time &lt; <code>KILL_THRESHOLD_MS</code> (default 30s)</td>
+      <td><span class="rule-skip">SKIP</span></td>
+      <td>Too short to be a real problem. Let it resolve naturally.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R3</span></td>
+      <td>SPID &lt; 50 (SQL Server internal/system session)</td>
+      <td><span class="rule-alert">ALERT_ONLY</span></td>
+      <td>Killing a system session could crash the server.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R9</span></td>
+      <td>Transaction log size &gt; <code>LOG_SIZE_KILL_THRESHOLD_GB</code></td>
+      <td><span class="rule-alert">ALERT_ONLY + DBA email</span></td>
+      <td>Large rollback from a kill could fill the log and take the DB offline.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R10</span></td>
+      <td>Kills in the last hour ≥ <code>MAX_KILLS_PER_HOUR</code></td>
+      <td><span class="rule-alert">ALERT_ONLY</span></td>
+      <td>Rate limiter — prevents the agent from killing in a storm scenario.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R11</span></td>
+      <td>Victim logins don't match <code>application_account_patterns</code></td>
+      <td><span class="rule-skip">SKIP</span></td>
+      <td>Only kill blockers whose victims are known application accounts.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R12</span></td>
+      <td>Isolation level is in <code>skip_isolation_levels</code> list</td>
+      <td><span class="rule-skip">SKIP</span></td>
+      <td>Some isolation levels (e.g. SERIALIZABLE) block intentionally.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R13</span></td>
+      <td>Session is already rolling back (scenario 5, <code>percent_complete &gt; 0</code>, or ROLLBACK wait type)</td>
+      <td><span class="rule-alert">ALERT_ONLY</span></td>
+      <td>Session is already fixing itself — killing it would restart the rollback and make things worse.</td>
+    </tr>
+    <tr>
+      <td><span class="rl">R14</span></td>
+      <td>Distributed transaction (DTC) wait type on the blocker</td>
+      <td><span class="rule-alert">ALERT_ONLY</span></td>
+      <td>DTC transactions span multiple servers — killing one participant can corrupt data.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ─── SECURITY ──────────────────────────────────────────────────────── -->
+<section id="security">
+  <h2>🔒 Security</h2>
+
+  <div class="card card-green">
+    <h3 style="margin-top:0">DRY_RUN=true by Default</h3>
+    <p>The most important safety feature. When <code>DRY_RUN=true</code> (the default), the agent <em>never</em> issues a real <code>KILL</code> command. It goes through every step — detection, analysis, determination — but the action node only logs "would have killed SPID X" and returns <code>kill_status=DRY_RUN_SIMULATED</code>. You must explicitly set <code>DRY_RUN=false</code> in the database config to enable live kills.</p>
+  </div>
+
+  <div class="card card-blue">
+    <h3 style="margin-top:0">SPID Recycling Protection (Gap A)</h3>
+    <p>SQL Server session IDs (SPIDs) can be recycled — SPID 99 might belong to <code>batch_job_usr</code> when the agent decides to kill it, but by the time the KILL executes, SPID 99 might belong to an innocent new connection. The <code>sql_validator.py</code> tool checks <code>expected_login</code> after the kill: if the SPID now shows a different login, it was recycled and the agent reports <code>CONFIRMED_GONE</code> (the original bad session is gone). This prevents accidentally killing innocent sessions.</p>
+  </div>
+
+  <div class="card card-blue">
+    <h3 style="margin-top:0">Immutable Audit Trail</h3>
+    <p>Every kill is recorded in <code>KillAuditLog</code> (append-only). Every blocking event is recorded in <code>BlockingEventLog</code>. These tables are never updated or deleted — they form a permanent audit trail that can be reviewed by DBAs, security teams, or compliance auditors.</p>
+  </div>
+
+  <div class="card card-red">
+    <h3 style="margin-top:0">Secrets Management</h3>
+    <ul>
+      <li><code>.env</code> files are listed in <code>.gitignore</code> — never committed to git</li>
+      <li>API keys (<code>LLM_API_KEY</code>) support both explicit keys and <code>DefaultAzureCredential</code> (managed identity for cloud deployments)</li>
+      <li>SQL logins use least-privilege accounts — the monitor account has read-only DMV access; only the kill account can issue <code>KILL</code></li>
+    </ul>
+  </div>
+
+  <div class="card card-amber">
+    <h3 style="margin-top:0">SQL Injection Prevention</h3>
+    <p>All SQL queries in the tools use parameterized statements (<code>cursor.execute(sql, params)</code>), never string formatting. The only dynamic SQL is the <code>KILL &lt;spid&gt;</code> command — the SPID is an integer, validated to be &gt; 50 (R3 gate) before use.</p>
+  </div>
+
+  <div class="card card-blue">
+    <h3 style="margin-top:0">Lock Timeout Protection</h3>
+    <p>Every SQL query in the agent runs after <code>SET LOCK_TIMEOUT 30000</code> — if a DMV query itself gets blocked (which can happen during heavy contention), SQL Server raises an error after 30 seconds instead of waiting forever. This prevents the monitoring agent from being blocked by the very condition it's trying to detect.</p>
+  </div>
+</section>
+
+<!-- ─── ERROR HANDLING ────────────────────────────────────────────────── -->
+<section id="errors">
+  <h2>⚠️ Error Handling</h2>
+
+  <h3>Tool-Level Isolation</h3>
+  <p><strong>Plain English:</strong> Each of the 6 diagnostic tools in <code>detection_node</code> is wrapped in a try/except. If the plan cache query fails (maybe that DMV is locked), the agent records the error but continues — it still runs the other 5 tools and makes the best decision it can with partial data. One failing tool doesn't crash the whole cycle.</p>
+
+<pre><code><span class="cm"># Pattern used in detection_node for every tool:</span>
+<span class="kw">try</span>:
+    plan_result = <span class="fn">analyze_plan_cache</span>(...)
+    state.plan_cache_hit = plan_result.plan_cache_hit
+<span class="kw">except</span> Exception <span class="kw">as</span> e:
+    state.errors.<span class="fn">append</span>(f<span class="st">"plan_cache: {e}"</span>)   <span class="cm"># record it</span>
+    <span class="cm"># continue — other tools still run</span>
+</code></pre>
+
+  <h3>Cycle-Level Crash Recovery</h3>
+  <p>In <code>main()</code>, every call to <code>run_cycle()</code> is wrapped in try/except. If the entire cycle crashes (e.g., the SQL Server is unreachable), the error is logged, but the polling loop continues. The agent will try again on the next interval.</p>
+
+  <h3>LLM Timeout and Retry</h3>
+  <p>The <code>FoundryChatClient</code> is configured with:</p>
+  <ul>
+    <li><code>LLM_TIMEOUT_SECONDS</code> (default 30) — if the GPT API doesn't respond in 30 seconds, the request is cancelled</li>
+    <li><code>LLM_MAX_RETRIES</code> (default 2) — transient failures are retried automatically</li>
+  </ul>
+
+  <h3>Async/Sync Bridge Error Isolation</h3>
+  <p>The <code>ask_llm_json_sync()</code> bridge runs the async LLM call in a dedicated thread via <code>ThreadPoolExecutor</code>. If the async call raises an exception, <code>future.result()</code> re-raises it in the calling thread, where it's caught by the tool-level try/except in <code>rca_node</code>.</p>
+
+  <h3>Config DB Unavailability</h3>
+  <p>If <code>AgentConfigDB</code> is unreachable at startup, <code>load_config()</code> falls back to environment variables entirely and logs a warning. The agent still runs with env-var defaults — it doesn't fail to start.</p>
+</section>
+
+<!-- ─── PERFORMANCE ──────────────────────────────────────────────────── -->
+<section id="performance">
+  <h2>⚡ Performance</h2>
+
+  <table>
+    <tr><th>Scenario</th><th>LLM calls</th><th>Typical duration</th></tr>
+    <tr><td>No blocking detected</td><td>0</td><td>&lt; 1 second</td></tr>
+    <tr><td>Blocking detected, hard gate fires (SKIP/ALERT)</td><td>1 (analyzer only)</td><td>3–8 seconds</td></tr>
+    <tr><td>Full KILL cycle</td><td>3 (analyzer + determination + rca)</td><td>15–30 seconds</td></tr>
+  </table>
+
+  <div class="card card-blue">
+    <h4>Zero LLM cost on clean cycles</h4>
+    <p style="margin:0">The routing after <code>detection_node</code> short-circuits to <code>notification_node</code> if <code>has_blocking=False</code>. No LLM executors are called. On a healthy SQL Server, the agent consumes no AI credits.</p>
+  </div>
+
+  <div class="card card-blue">
+    <h4>Singleton FoundryChatClient</h4>
+    <p style="margin:0"><code>BaseAgent._CLIENT</code> is a class-level variable — the <code>FoundryChatClient</code> is created once and reused across all cycles. This avoids connection setup overhead on every cycle.</p>
+  </div>
+
+  <div class="card card-teal">
+    <h4>Fully Async Pipeline</h4>
+    <p style="margin:0">All executor functions are <code>async def</code>. LLM calls use <code>await</code> — Python's event loop can handle other work while waiting for GPT responses. The sync bridge for <code>rca.py</code> uses a dedicated thread, keeping the main event loop unblocked.</p>
+  </div>
+
+  <div class="card card-blue">
+    <h4>Configurable Polling Interval</h4>
+    <p style="margin:0"><code>POLL_INTERVAL_SECONDS</code> (default 45s, configurable in <code>AgentConfigDB</code>) controls how often cycles run. Faster = more responsive; slower = less SQL Server overhead.</p>
+  </div>
+</section>
+
+<!-- ─── CONFIGURATION ────────────────────────────────────────────────── -->
+<section id="config">
+  <h2>⚙️ Configuration</h2>
+  <p>Settings are loaded in two layers. Database values override environment variables — no restart needed to change them.</p>
+
+  <h3>Layer 1 — .env file</h3>
+  <table>
+    <tr><th>Variable</th><th>Default</th><th>What it controls</th></tr>
+    <tr><td><code>FOUNDRY_PROJECT_ENDPOINT</code></td><td>—</td><td>Azure AI Foundry project URL (new MAF variable)</td></tr>
+    <tr><td><code>LLM_BASE_URL</code></td><td>—</td><td>Fallback: LangGraph-style OpenAI-compatible URL</td></tr>
+    <tr><td><code>LLM_MODEL</code></td><td>gpt-4.1</td><td>Model/deployment name</td></tr>
+    <tr><td><code>LLM_API_KEY</code></td><td>—</td><td>API key (blank = use DefaultAzureCredential)</td></tr>
+    <tr><td><code>LLM_TIMEOUT_SECONDS</code></td><td>30</td><td>Per-LLM-request timeout</td></tr>
+    <tr><td><code>LLM_MAX_RETRIES</code></td><td>2</td><td>Retry count for transient LLM errors</td></tr>
+    <tr><td><code>SQL_SERVER</code></td><td>localhost</td><td>SQL Server to monitor</td></tr>
+    <tr><td><code>DRY_RUN</code></td><td>true</td><td>true = never KILL; false = live mode</td></tr>
+    <tr><td><code>KILL_THRESHOLD_MS</code></td><td>30000</td><td>Minimum wait before considering a KILL (R2)</td></tr>
+    <tr><td><code>POLL_INTERVAL_SECONDS</code></td><td>45</td><td>How often the agent checks for blocking</td></tr>
+    <tr><td><code>MAX_KILLS_PER_HOUR</code></td><td>10</td><td>Kill rate limiter (R10)</td></tr>
+    <tr><td><code>LOG_SIZE_KILL_THRESHOLD_GB</code></td><td>10</td><td>Log size above which KILL is blocked (R9)</td></tr>
+    <tr><td><code>DBA_EMAIL</code></td><td>—</td><td>Email address for DBA alerts</td></tr>
+  </table>
+
+  <h3>Layer 2 — AgentConfigDB.dbo.GlobalConfig (live overrides)</h3>
+  <table>
+    <tr><th>ConfigKey</th><th>Description</th></tr>
+    <tr><td><code>DryRunGlobal</code></td><td>Override DRY_RUN without restarting the agent</td></tr>
+    <tr><td><code>KillThresholdMs</code></td><td>Override kill threshold live</td></tr>
+    <tr><td><code>MaxKillsPerHour</code></td><td>Override kill rate limiter live</td></tr>
+    <tr><td><code>LogSizeKillThresholdGB</code></td><td>Override log size threshold live</td></tr>
+    <tr><td><code>PollIntervalSeconds</code></td><td>Override poll frequency live</td></tr>
+    <tr><td><code>DbaAlertEmail</code></td><td>Override DBA email live</td></tr>
+  </table>
+
+  <h3>get_config() Singleton (MAF pattern)</h3>
+  <p>Unlike LangGraph which injected config via <code>RunnableConfig["configurable"]</code> into every node function, MAF has no built-in config injection. This codebase solves it with a module-level singleton:</p>
+<pre><code><span class="cm"># orchestrator/config.py</span>
+_ACTIVE_CONFIG: dict = {}        <span class="cm"># populated once at startup</span>
+
+<span class="kw">def</span> <span class="fn">get_config</span>() -> dict:
+    <span class="kw">return</span> _ACTIVE_CONFIG          <span class="cm"># any executor can call this</span>
+
+<span class="kw">def</span> <span class="fn">load_config</span>() -> dict:
+    <span class="kw">global</span> _ACTIVE_CONFIG
+    <span class="cm"># ... read .env and AgentConfigDB ...</span>
+    _ACTIVE_CONFIG = config
+    <span class="kw">return</span> config
+</code></pre>
+</section>
+
+<footer>
+  <p>SQL Server Blocking Agent — Microsoft Agent Framework Edition</p>
+  <p style="margin-top:6px">Companion repo (LangGraph): <code>c:\Python\sql-blocking-agent\DOCUMENTATION.html</code></p>
+  <p style="margin-top:6px;font-size:12px">Generated 2026-07-05 · Zero LangChain/LangGraph dependencies · Live-tested against SQL Server 2025</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+// Active nav link on scroll
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.nav a[href="#${e.target.id}"]`);
+      if (a) a.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -75% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
